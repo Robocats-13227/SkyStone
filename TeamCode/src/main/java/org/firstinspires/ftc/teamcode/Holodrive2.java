@@ -97,13 +97,13 @@ public class Holodrive2 extends LinearOpMode {
     public double Rj_init_x;
     public double Rj_init_y;
 
-//    double translateDeadband = 0.05;//Minimum speed factorWill need to tune
+    //    double translateDeadband = 0.05;//Minimum speed factorWill need to tune
 //    double rotationSpeedFactor = 1.5;//Sets maximum rotation speed for auto correction. Gets multiplied by error in radians
 //    double manualRotationSpeed = .02;//Heading change per loop period in radians. Will need to tune
 //    double minimumHeadingCorrectionSpeed = 0.05;//Minimum rotation correction speed. Will need to tune
 //    double headingCorrectionDeadband = 0.7;//Deadband in radians. Will need to tune
     double translateDeadband = 0.05;//Minimum speed factor. Will need to tune
-    double rotationSpeedFactor = 2;//Sets maximum rotation speed for auto correction. Gets multiplied by error in radians
+    double rotationSpeedFactor = -1;//Sets maximum rotation speed for auto correction. Gets multiplied by error in radians
     double manualRotationSpeed = .05;//Heading change per loop period in radians. Will need to tune
     double minimumHeadingCorrectionSpeed = 0.05;//Minimum rotation correction speed. Will need to tune
     double headingCorrectionDeadband = 0.01;//Deadband in radians. Will need to tune
@@ -132,10 +132,10 @@ public class Holodrive2 extends LinearOpMode {
         // Initialize the motor hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        frontLeftDrive  = hardwareMap.get(DcMotorEx.class, "frontLeftMotor");
-        frontRightDrive = hardwareMap.get(DcMotorEx.class, "frontRightMotor");
-        backLeftDrive  = hardwareMap.get(DcMotorEx.class, "backLeftMotor");
-        backRightDrive = hardwareMap.get(DcMotorEx.class, "backRightMotor");
+        frontLeftDrive  = hardwareMap.get(DcMotorEx.class, "frontLeft");
+        frontRightDrive = hardwareMap.get(DcMotorEx.class, "frontRight");
+        backLeftDrive  = hardwareMap.get(DcMotorEx.class, "BackLeft");
+        backRightDrive = hardwareMap.get(DcMotorEx.class, "BackRight");
         ArmMotor = hardwareMap.get(DcMotorEx.class,"Arm");
         Claw_servo = hardwareMap.get(Servo.class,"Claw");
         Claw2_servo = hardwareMap.get(Servo.class,"Claw2");
@@ -218,7 +218,7 @@ public class Holodrive2 extends LinearOpMode {
     private double getGyroHeading(){
         //  return gyro.getIntegratedZValue();
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS);
-        return -angles.firstAngle * CONTROL_HUB_ORIENTATION_FACTOR;
+        return angles.firstAngle;
     }
 
     /**
@@ -300,12 +300,12 @@ public class Holodrive2 extends LinearOpMode {
      * @param targetHeading, currentHeading
      */
 
-    public double calculateHeadingError(double targetHeading, double currentHeading) {
+    public double calculateHeadingError(double targetHeading, double cHeading) {
         double robotError;
 
         // calculate error in -179 to +180 range : In radians
-        robotError = targetHeading - currentHeading;
-        while (robotError > Math.PI)  robotError -= 2*Math.PI;
+        robotError = targetHeading - cHeading;
+        while (robotError >= Math.PI)  robotError -= 2*Math.PI;
         while (robotError <= -Math.PI) robotError += 2*Math.PI;
         return -robotError;
     }
@@ -336,12 +336,12 @@ public class Holodrive2 extends LinearOpMode {
         }
     }
 
+    //rotation code
     private void updateMotionJoystick()
     {
         double motionUpdateFactor = 0.02;
-        translateTargetJoyX =    -gamepad1.left_stick_x + Lj_init_x;
-        translateTargetJoyY =    -gamepad1.left_stick_y + Lj_init_y;
-
+        translateTargetJoyX =    -gamepad1.left_stick_x ;
+        translateTargetJoyY =    gamepad1.left_stick_y ;
         if (translateJoyX + motionUpdateFactor > translateTargetJoyX)
         {
             translateJoyX = translateTargetJoyX;
@@ -373,7 +373,7 @@ public class Holodrive2 extends LinearOpMode {
                 translateJoyY = translateJoyY - motionUpdateFactor;
             }
         }
-        rotateJoyX =    gamepad1.right_stick_x - Rj_init_x;
+        rotateJoyX =  gamepad1.right_stick_x - Rj_init_x;
         rotateAnticlockwiseBumper =   gamepad1.left_bumper;
         rotateClockwiseBumper =  gamepad1.right_bumper;
         rotateNorth = gamepad1.dpad_up;
@@ -440,36 +440,26 @@ public class Holodrive2 extends LinearOpMode {
             targetHeading = Math.toRadians(270);
         }
 
-        //Now check if any rotation requested from the bumpers
-        if (rotateAnticlockwiseBumper) {
-            targetHeading = currentHeading + manualRotationSpeed;
-        }
-        else if (rotateClockwiseBumper) {
-            targetHeading = currentHeading - manualRotationSpeed;
-        }
-        //Otherwise check if any rotation requested from the joystick
-        else if (Math.abs(rotateJoyX) > 0.1) {
-            targetHeading = currentHeading - (rotateJoyX * manualRotationSpeed);
-        }
     }
 
     void updateMotionCorrections()
     {
         headingError = calculateHeadingError(targetHeading, currentHeading);
-        //If the error is small (less than the deadband) then do not correct anything
-        if (Math.abs(headingError) > headingCorrectionDeadband)
+        /*If the error is small (less than the deadband) then do not correct anything
+             if (Math.abs(headingError) > headingCorrectionDeadband)
             headingCorrectionSpeed = headingError * rotationSpeedFactor;
         else
             headingCorrectionSpeed = 0.0;
 
-        //If the correction power is really small then increase it so it actually does something, unless it really was zero
+
+        /*If the correction power is really small then increase it so it actually does something, unless it really was zero
         if ((Math.abs(headingCorrectionSpeed) < minimumHeadingCorrectionSpeed)  && (headingCorrectionSpeed != 0.0))
         {
             if (headingCorrectionSpeed >= 0)
                 headingCorrectionSpeed = minimumHeadingCorrectionSpeed;
             else
                 headingCorrectionSpeed = -minimumHeadingCorrectionSpeed;
-        }
+        } */
 
         //Subtract the current heading to get robot centric direction
         botCentricDirection =  translateDirection - currentHeading;
@@ -603,9 +593,14 @@ public class Holodrive2 extends LinearOpMode {
             telemetry.addData("BL: ", backLeftSpeed);
             telemetry.addData("BR: ", backRightSpeed);
             telemetry.addData("ArmMotor",ArmMotor.getCurrentPosition());
+            telemetry.addData("heading",currentHeading);
+            telemetry.addData("targetHeading",targetHeading);
+            telemetry.addData("headingCorrectionSpeed",headingCorrectionSpeed);
+            telemetry.addData("heading error radians ",headingError);
+            telemetry.addData("heading error degrees",Math.toDegrees(headingError));
+
             telemetry.update();
         }
         setMotors(0, 0, 0, 0);
     }
 }
-

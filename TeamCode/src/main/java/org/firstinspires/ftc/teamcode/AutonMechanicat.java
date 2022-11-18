@@ -34,8 +34,13 @@ import java.util.List;
 
         public boolean left = false;
         public boolean blue = true;
-        public boolean forward = false;
-        public boolean LeftnoCone = true;
+        public int slots;
+
+    private static final String[] LABELS = {
+            "1 Bolt",
+            "2 Bulb",
+            "3 Panel"
+    };
 
 
 
@@ -69,9 +74,7 @@ import java.util.List;
     final public int TOP_ARM_POS = 4043; // = 33 inches
 
         //Vision
-        private static final String TFOD_MODEL_ASSET = "Skystone.tflite";
-        private static final String LABEL_FIRST_ELEMENT = "Stone";
-        private static final String LABEL_SECOND_ELEMENT = "Skystone";
+        private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
         private static final String VUFORIA_KEY =
                 "AebftHb/////AAABmd/Ha8apiEpSpbtB4aKGLN9QTt3cxCjgODwhU7ZA4aNckDj/EDSRMUC5CYXZOvblT0jsfXOuQCJ5EV6vELtqHC0XbdmzxaabtF1/4QM6eykLYi+JLJe8tLT2YtkBAR2CDOK58E7IpUT5cr22fvYBv3inUpMIShMpeRVN595ZGrkQqjdrOoLG61yXez30PlEFaOzY2x5bRojrROJAUvca7TsUsLBE/33Q3ujLXKQWcuSNKiLZhKlS0b4EiH9kLd8/W936mBmTF2XUpXCQdEpPaqdOt3zJL/qrh39VUPRYdRvwthNfy0/9u1xklcpui940V3EOkEi0fqL3siQq/YKvCc+f3x1sUvEBHGUSRGxgafSN";
         private TFObjectDetector tfod;
@@ -111,6 +114,9 @@ import java.util.List;
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Arm_Motor.setVelocity(max_arm_velo);
 
+        initVuforia();
+        initTfod();
+
 
         // Retrieve the IMU from the hardware map
         imu = hardwareMap.get(BNO055IMU.class, "imu");
@@ -134,6 +140,35 @@ import java.util.List;
         Claw_2.setPosition(1);
     }
 
+    public int marker_identification()
+    {
+        List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+        Recognition recognition = updatedRecognitions.get(0);
+
+        double col = (recognition.getLeft() + recognition.getRight()) / 2 ;
+        double row = (recognition.getTop()  + recognition.getBottom()) / 2 ;
+        double width  = Math.abs(recognition.getRight() - recognition.getLeft()) ;
+        double height = Math.abs(recognition.getTop()  - recognition.getBottom()) ;
+
+        telemetry.addData(""," ");
+        telemetry.addData("Image", "%s (%.0f %% Conf.)", recognition.getLabel(), recognition.getConfidence() * 100 );
+        telemetry.addData("- Position (Row/Col)","%.0f / %.0f", row, col);
+        telemetry.addData("- Size (Width/Height)","%.0f / %.0f", width, height);
+        if(recognition.getLabel() == "panel")
+        {
+            slots  =3;
+        }
+        if(recognition.getLabel() == "bulb")
+        {
+            slots  =2;
+        }
+        if(recognition.getLabel() == "bolt")
+        {
+            slots  =1;
+        }
+        return slots;
+    }
+
         @Override
         public void runOpMode() {
 
@@ -150,16 +185,23 @@ import java.util.List;
             telemetry.update();
 
             // **********************************************************************************************************
-            waitForStart();
+
+            while(!isStarted())
+            {
+               // marker_identification();
+            }
 
             telemetry.addData("Mode", "running");
             telemetry.update();
 
-            if(forward)
+
+
+
+            if(slots == 2)
             {
                 AutogoForwardSlot();
             }
-            else if(LeftnoCone)
+            else if(slots == 1)
             {
                 AutogoLeftSlot();
             }
@@ -247,56 +289,41 @@ import java.util.List;
             driveHeading(20,0,.7);
         }
 
+    private void initVuforia() {
+        /*
+         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
+         */
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+        //  Instantiate the Vuforia engine
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+    }
+
+    /**
+     * Initialize the TensorFlow Object Detection engine.
+     */
+    private void initTfod() {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.75f;
+        tfodParameters.isModelTensorFlow2 = true;
+        tfodParameters.inputSize = 300;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+
+        // Use loadModelFromAsset() if the TF Model is built in as an asset by Android Studio
+        // Use loadModelFromFile() if you have downloaded a custom team model to the Robot Controller's FLASH.
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
+        // tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
+    }
 
 
 
 
 
-
-        /* this is the code that determines where the stone is and then drives to it grabs it
-                and then takes it over the center line                                          */
-
-        /*private void grabSkyStoneBlue(){
-            //this test to see if the robot can properly detect the blocks, will change when it can
-            if (vision() == 1) { //left
-                telemetry.addLine("vision = 1");
-                telemetry.update();
-                driveHeading(7,0,.5);
-                rotate(74,.5);
-                driveHeading(-12,0,.8);
-                Stonegrabber.setPosition(-.6);
-                sleep(500);
-                driveHeading(8,0,1);
-                right(75,1);
-                Stonegrabber.setPosition(.5);
-
-            }
-            if (vision() == 2) { //middle
-                telemetry.addLine("vision = 2");
-                telemetry.update();
-                rotate(76,.5);
-                driveHeading(-12,0,.8);
-                Stonegrabber.setPosition(-.6);
-                sleep(500);
-                driveHeading(8,0,1);
-                right(55,1);
-                Stonegrabber.setPosition(.5);
-
-            }
-            if (vision() == 3) { //right
-                telemetry.addLine("vision = 3");
-                telemetry.update();
-                rotate(76,.5);
-                left(3,1);
-                driveHeading(-12,0,.8);
-                Stonegrabber.setPosition(-.6);
-                sleep(500);
-                driveHeading(8,0,1);
-                right(55,1);
-                Stonegrabber.setPosition(.5);
-            }
-
-        } */
 
         private void right (int distanceInInches,double speed){
 
@@ -549,102 +576,8 @@ import java.util.List;
 
 
 
-        private void initTfod() {
-            int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-                    "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-            TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-            tfodParameters.minimumConfidence = 0.8;
-            tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-            tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
-        }
-
-        private void initVuforia() {
-            /*
-             * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
-             */
-
-            telemetry.addLine("before params creation");
-            telemetry.update();
-            VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
-
-            parameters.vuforiaLicenseKey = VUFORIA_KEY;
-            parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
-            telemetry.addLine("after webcame mapping");
-
-            //  Instantiate the Vuforia engine
-            vuforia = ClassFactory.getInstance().createVuforia(parameters);
-            telemetry.addLine("after classfactory instance creation");
-            telemetry.update();
-
-            // Loading trackables is not necessary for the TensorFlow Object Detection engine.
-        }
-
-        private int vision() {
-
-            float block1Left;
-            float block2left;
-            boolean skyStone1 = false;
-            boolean skyStone2 = false;
-
-            if (tfod != null) {
-                // getUpdatedRecognitions() will return null if no new information is available since
-                // the last time that call was made.
-                List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-                if (updatedRecognitions != null && updatedRecognitions.size()>=2) {
-                    telemetry.addData("# Object Detected", updatedRecognitions.size());
-                    // step through the list of recognitions and display boundary info.
-                    int i = 0;
-                    Recognition recognition = updatedRecognitions.get(0);
-                    block1Left = recognition.getLeft();
-                    telemetry.addData("object 0 left pos:", block1Left);
-
-                    if (recognition.getLabel() == "Skystone") {
-                        skyStone1 = true;
-                    }
-                    telemetry.addData("object 0 SS? ", skyStone1);
-
-                    recognition = updatedRecognitions.get(1);
-                    block2left = recognition.getLeft();
-                    telemetry.addData("object 1 left pos:", block2left);
 
 
-                    if (recognition.getLabel() == "Skystone")
-                        skyStone2 = true;
-
-                    telemetry.addData("object 1 SS? ", skyStone2);
-                    telemetry.update();
-
-                    if (skyStone1) {
-                        if (block1Left < block2left){
-                            telemetry.addLine("CONFIRM SKYSTONE MIDDLE");
-                            telemetry.update();
-                            return 2;
-                        }
-                        else {
-                            telemetry.addLine("CONFIRM SKYSTONE RIGHT");
-                            telemetry.update();
-                            return 3;
-                        }
-                    } else if (skyStone2) {
-                        if (block2left < block1Left) {
-                            telemetry.addLine("CONFIRM SKYSTONE MIDDLE");
-                            telemetry.update();
-                            return 2;
-                        }
-                        else {
-                            telemetry.addLine("CONFIRM SKYSTONE RIGHT");
-                            telemetry.update();
-                            return 3;
-                        }
-                    }
-                    telemetry.addLine("CONFIRM SKYSTONE LEFT");
-                    telemetry.update();
-                    return 1;
-
-                } else return -1;
-            }
-            return -1;
-        }
 
 
         private void resetAngle()

@@ -49,6 +49,28 @@ public class SteveTest extends LinearOpMode {
 
     final private boolean dashboardEnabled = false;//Are we debugging with FtcDashboard ?
     final private int gyroOrientation = -1;//Set to either +1 or -1 depending on control hub mountint orientation
+    final private boolean fieldCentric = true;//Select field centric or robot centric
+    //Tunable variables
+    final private double translationUpdateFactor = 0.05;//Translation joystick tracking rate
+    final private double headingCorrectionFactor = 360.0 / 15000.0;//Heading rotation correction 'power' factor
+    final private double minHeadingError = 4.0;//Minimim rotation heading error to actually act on
+    final private double rotationCrossover = 15;//Transition point from max to proportional rotation
+    final private double rotationCorrectionSpeedMax = 0.5;//The maximum rotation power factor
+    final private int    max_base_velocity = 2000;//Max robot base translation velocity
+    final private int    max_arm_velocity= 2000;
+    final private int    DriveMode = 1;
+    final private double translateDeadband = 0.05;//Minimum speed factor. Will need to tune
+    final private double rotateTriggerDeadband = 0.1;
+    final private double rotationTriggerSpeed = 15.0;//Controls how fast manual triggers cause rotation
+    final private int    BOTTOM_ARM_POS = 200;
+    final private int    LOW_ARM_POS =  1925; // = 13 inches
+    final private int    MEDIUM_ARM_POS =3147  ; // = 23 inches
+    final private int    TOP_ARM_POS = 4043; // = 33 inches
+    final private  int   ArmMoveSpeed = 200;//Ticks per processing loop to move in manual mode
+    final private double TRIGGER_DEADZONE = 0.1;
+    final private double slowSpeedFactor = 0.5;
+    final private double fastSpeedFactor = 1.0;
+
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotorEx frontLeftDrive = null;
@@ -56,7 +78,7 @@ public class SteveTest extends LinearOpMode {
     private DcMotorEx backLeftDrive = null;
     private DcMotorEx backRightDrive = null;
     private DcMotorEx ArmMotor = null;
-    private Servo Claw_servo = null;
+    private Servo Claw1_servo = null;
     private Servo Claw2_servo = null;
     private BNO055IMU imu    = null;
     private double translateJoyX = 0.0;
@@ -69,7 +91,6 @@ public class SteveTest extends LinearOpMode {
     private double botCentricTranslationDirection = 0.0;
     private double rotationError = 0.0;
     private double translationSpeed = 0.0;
-    private double normalizationFactor = 1.0;
     private double rotationCorrectionSpeed = 0.0;
     private double frontLeftSpeed;
     private double frontRightSpeed;
@@ -81,28 +102,23 @@ public class SteveTest extends LinearOpMode {
     private boolean rotateSouth = false;
     private boolean rotateEast  = false;
     private boolean rotateWest  = false;
-
-    private double Lj_init_x;
-    private double Lj_init_y;
-
-    private double Rj_init_x;
-    private double Rj_init_y;
-
-    //Tunable variables
-    final private double translationUpdateFactor = 0.05;//Translation joystick tracking rate
-    final private double headingCorrectionFactor = 360.0 / 10000.0;//Heading rotation correction 'power' factor
-    final private double minHeadingError = 2.0;//Minimim rotation heading error to actually act on
-    final private double rotationCorrectionSpeedMax = 0.5;//The maximum rotation power factor
-    final private int    max_base_velocity = 2000;//Max robot base translation velocity
-    final private int    max_arm_velocity= 2000;
-    final private int    DriveMode = 1;
-    final private double translateDeadband = 0.05;//Minimum speed factor. Will need to tune
-    final private int    BOTTOM_ARM_POS = 400;
-    final private int    LOW_ARM_POS =  1925; // = 13 inches
-    final private int    MEDIUM_ARM_POS =3147  ; // = 23 inches
-    final private int    TOP_ARM_POS = 4344; // = 33 inches
-    final private  int   ArmMoveSpeed = 200;//Ticks per processing loop to move in manual mode
-    final private double TRIGGER_DEADZONE = 0.1;
+    private boolean driveSlow = true;//SLow the robot unless bumper pressed
+    private double Lj1_init_x;
+    private double Lj1_init_y;
+    private double Rj1_init_x;
+    private double Rj1_init_y;
+    private double Lj2_init_x;
+    private double Lj2_init_y;
+    private double Rj2_init_x;
+    private double Rj2_init_y;
+    private boolean moveArmUp     = false;
+    private boolean moveArmDown   = false;
+    private boolean moveArmBottom = false;
+    private boolean moveArmLow    = false;
+    private boolean moveArmMedium = false;
+    private boolean moveArmTop    = false;
+    private boolean openClaw      = false;
+    private boolean closeClaw     = false;
 
     /**
      * Initialize the motors
@@ -116,7 +132,7 @@ public class SteveTest extends LinearOpMode {
         backLeftDrive  = hardwareMap.get(DcMotorEx.class, "BackLeft");
         backRightDrive = hardwareMap.get(DcMotorEx.class, "BackRight");
         ArmMotor = hardwareMap.get(DcMotorEx.class,"Arm");
-        Claw_servo = hardwareMap.get(Servo.class,"Claw");
+        Claw1_servo = hardwareMap.get(Servo.class,"Claw");
         Claw2_servo = hardwareMap.get(Servo.class,"Claw2");
 
 
@@ -148,11 +164,15 @@ public class SteveTest extends LinearOpMode {
 
     public void initializeJoysticks(){
         //Capture the 'at rest' positions of the joysticks
-        Lj_init_x = gamepad1.left_stick_x;
-        Lj_init_y = gamepad1.left_stick_y;
+        Lj1_init_x = gamepad1.left_stick_x;
+        Lj1_init_y = gamepad1.left_stick_y;
+        Rj1_init_x = gamepad1.right_stick_x;
+        Rj1_init_y = gamepad1.right_stick_y;
 
-        Rj_init_x = gamepad1.right_stick_x;
-        Rj_init_y = gamepad1.right_stick_y;
+        Lj2_init_x = gamepad2.left_stick_x;
+        Lj2_init_y = gamepad2.left_stick_y;
+        Rj2_init_x = gamepad2.right_stick_x;
+        Rj2_init_y = gamepad2.right_stick_y;
     }
 
     private void resetEncoders(){
@@ -302,14 +322,32 @@ public class SteveTest extends LinearOpMode {
      */
     private void updateJoysticks()
     {
-        translateTargetJoyX =    gamepad1.left_stick_x ;
-        translateTargetJoyY =    gamepad1.left_stick_y ;
+        //Bot motion controls on stick 1
+        translateTargetJoyX        = gamepad1.left_stick_x  - Lj1_init_x;
+        translateTargetJoyY        = gamepad1.left_stick_y  - Lj1_init_y;
+        driveSlow                  = !gamepad1.right_bumper;
+        rotateNorth                = gamepad1.dpad_up;
+        rotateSouth                = gamepad1.dpad_down;
+        rotateEast                 = gamepad1.dpad_right;
+        rotateWest                 = gamepad1.dpad_left;
+        rotateClockwiseTrigger     = gamepad1.right_trigger;
+        rotateAnticlockwiseTrigger = gamepad1.left_trigger;
+
+        ///Bot mechanism cpntrols on stick 2
+        moveArmUp     = (gamepad2.right_trigger > TRIGGER_DEADZONE) ? true : false;
+        moveArmDown   = (gamepad2.left_trigger > TRIGGER_DEADZONE) ? true : false;
+        moveArmBottom = gamepad2.dpad_down;
+        moveArmLow    = gamepad2.dpad_right;
+        moveArmMedium = gamepad2.dpad_left;
+        moveArmTop    = gamepad2.dpad_up;
+        openClaw      = gamepad2.x;
+        closeClaw     = gamepad2.b;
 
         //For the moment don't do any acceleration control
-        translateJoyX = translateTargetJoyX;
-        translateJoyY = translateTargetJoyY;
+        //translateJoyX = translateTargetJoyX;
+        //translateJoyY = translateTargetJoyY;
 
-        /*
+
         if (translateJoyX + translationUpdateFactor > translateTargetJoyX)
         {
             translateJoyX = translateTargetJoyX;
@@ -341,14 +379,70 @@ public class SteveTest extends LinearOpMode {
                 translateJoyY = translateJoyY - translationUpdateFactor;
             }
         }
-         */
 
-        rotateAnticlockwiseTrigger =   gamepad1.left_trigger;
-        rotateClockwiseTrigger =  gamepad1.right_trigger;
-        rotateNorth = gamepad1.dpad_up;
-        rotateSouth = gamepad1.dpad_down;
-        rotateEast  = gamepad1.dpad_right;
-        rotateWest  = gamepad1.dpad_left;
+        if (rotateAnticlockwiseTrigger < rotateTriggerDeadband)
+        {
+            rotateAnticlockwiseTrigger = 0;
+        }
+        if (rotateClockwiseTrigger < rotateTriggerDeadband)
+        {
+            rotateClockwiseTrigger = 0;
+        }
+    }
+
+    public void process_lifter()
+    {
+        int current_pos;
+
+        current_pos = ArmMotor.getCurrentPosition();
+        if ((moveArmUp) && ( ArmMotor.getCurrentPosition() < TOP_ARM_POS-ArmMoveSpeed))
+        {
+            ArmMotor.setTargetPosition(current_pos+ArmMoveSpeed);
+            ArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            ArmMotor.setVelocity(max_arm_velocity);
+        }
+        else if((moveArmDown) && (ArmMotor.getCurrentPosition() > 0+ArmMoveSpeed))
+        {
+            ArmMotor.setTargetPosition(current_pos-ArmMoveSpeed);
+            ArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            ArmMotor.setVelocity(max_arm_velocity);
+        }
+        else if (moveArmBottom)
+        {
+            ArmMotor.setTargetPosition(BOTTOM_ARM_POS);
+            ArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            ArmMotor.setVelocity(max_arm_velocity);
+        }
+        else if (moveArmLow)
+        {
+            ArmMotor.setTargetPosition(LOW_ARM_POS);
+            ArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            ArmMotor.setVelocity(max_arm_velocity);
+
+        }
+        else if (moveArmMedium)
+        {
+            ArmMotor.setTargetPosition(MEDIUM_ARM_POS);
+            ArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            ArmMotor.setVelocity(max_arm_velocity);
+
+        }
+        else if (moveArmTop) {
+            ArmMotor.setTargetPosition(TOP_ARM_POS);
+            ArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            ArmMotor.setVelocity(max_arm_velocity);
+        }
+    }
+
+    public void process_claw()
+    {
+        if (openClaw){
+            Claw1_servo.setPosition(.4);
+            Claw2_servo.setPosition(1);}
+        else if (closeClaw){
+            Claw1_servo.setPosition(1);
+            Claw2_servo.setPosition(0.4);
+        }
     }
 
     void updateTargetTranslation()
@@ -369,7 +463,15 @@ public class SteveTest extends LinearOpMode {
 
     void updateTargetRotation()
     {
-        if (rotateNorth)
+        if (rotateAnticlockwiseTrigger != 0)
+        {
+            targetRotation = currentRotation - (rotateAnticlockwiseTrigger) * rotationTriggerSpeed;
+        }
+        else if (rotateClockwiseTrigger != 0)
+        {
+            targetRotation = currentRotation + (rotateClockwiseTrigger) * rotationTriggerSpeed;
+        }
+        else if (rotateNorth)
         {
             targetRotation = 0;
         }
@@ -390,13 +492,35 @@ public class SteveTest extends LinearOpMode {
 
     void calculateMotorSpeeds()
     {
+        double speedAdjust;
+
+        if (driveSlow)
+        {
+            speedAdjust = slowSpeedFactor;
+        }
+        else
+        {
+            speedAdjust = fastSpeedFactor;
+        }
         //Note, the diagonally opposite speeds are the same, so only need to calculate 2 values
-        frontLeftSpeed = translationSpeed*Math.sin(Math.toRadians(botCentricTranslationDirection) + (Math.PI/4));
-        frontRightSpeed = translationSpeed*Math.cos(Math.toRadians(botCentricTranslationDirection) + (Math.PI/4));
+        frontLeftSpeed = speedAdjust * translationSpeed*Math.sin(Math.toRadians(botCentricTranslationDirection) + (Math.PI/4));
+        frontRightSpeed = speedAdjust * translationSpeed*Math.cos(Math.toRadians(botCentricTranslationDirection) + (Math.PI/4));
 
-        rotationCorrectionSpeed = rotationError * headingCorrectionFactor;
-
-        //Clamp the rotational component to 0.5
+        //If the error angle is small then use proportional, otherwise use max power
+        if (Math.abs(rotationError) < rotationCrossover)
+        {
+            rotationCorrectionSpeed = rotationError * headingCorrectionFactor;
+        }
+        else
+        {
+            if (rotationError >0) {
+                rotationCorrectionSpeed = rotationCorrectionSpeedMax;
+            }
+            else {
+                rotationCorrectionSpeed = -rotationCorrectionSpeedMax;
+            }
+        }
+        //Clamp the rotational component to something like 0.5 to allow for both rotation and translation
         if (rotationCorrectionSpeed > rotationCorrectionSpeedMax)
         {
             rotationCorrectionSpeed = rotationCorrectionSpeedMax;
@@ -406,12 +530,28 @@ public class SteveTest extends LinearOpMode {
             rotationCorrectionSpeed = -rotationCorrectionSpeedMax;
         }
 
-
         //Duplicate diagonal speeds for translation and add in rotation
         backLeftSpeed   = frontRightSpeed + rotationCorrectionSpeed;
         backRightSpeed  = frontLeftSpeed - rotationCorrectionSpeed;
         frontRightSpeed = frontRightSpeed - rotationCorrectionSpeed;
         frontLeftSpeed  = frontLeftSpeed + rotationCorrectionSpeed;
+    }
+
+    void processTelemetry()
+    {
+        telemetry.addData("FL: ", frontLeftSpeed);
+        telemetry.addData("FR: ", frontRightSpeed);
+        telemetry.addData("BL: ", backLeftSpeed);
+        telemetry.addData("BR: ", backRightSpeed);
+//            telemetry.addData("ArmMotor",ArmMotor.getCurrentPosition());
+        telemetry.addData("Joystick heading",translationHeading);
+        telemetry.addData("Target rotation",targetRotation);
+        telemetry.addData("Robot rotation",currentRotation);
+        telemetry.addData("Rotation error",rotationError);
+        telemetry.addData("Robot heading",botCentricTranslationDirection);
+        telemetry.addData("rotationCorrectionSpeed",rotationCorrectionSpeed);
+
+        telemetry.update();
     }
 
     private void doTeleop()
@@ -422,40 +562,33 @@ public class SteveTest extends LinearOpMode {
         while(opModeIsActive())
         {
             currentRotation = getCurrentHeading();
-            //Get the joystick states
+            //Get the joystick states and process and softening controls
             updateJoysticks();
             //Calculate translation speed and direction from joysticks
             updateTargetTranslation();
-            //Update rotation heading
-            //           updateTargetRotation();
-            //Calculate any heading error
+            //Update rotation heading from joysticks
+            updateTargetRotation();
+            //Calculate the robot's rotation error
             rotationError = calculateHeadingError(targetRotation, currentRotation);
-            botCentricTranslationDirection = translationHeading;
+            //Subtract the rotation error so that the translation direction follows the
+            //robot's actual rotation and not the ideal rotation
+            if (fieldCentric)
+            {
+                botCentricTranslationDirection = translationHeading + currentRotation + rotationError;
+            }
+            else {
+                botCentricTranslationDirection = translationHeading + rotationError;
+            }
             //Now calculate the actual motor speeds
             calculateMotorSpeeds();
-            //And actually set the motors accordingly
+            //And now set the motors accordingly
             //Note, this function will also clamp and scale the power to 1.0
             setMotors(frontLeftSpeed, frontRightSpeed, backLeftSpeed, backRightSpeed);
 
+            process_lifter();
+            process_claw();
 
-//            process_lifter();
-
-//            process_claw();
-
-
-            telemetry.addData("FL: ", frontLeftSpeed);
-            telemetry.addData("FR: ", frontRightSpeed);
-            telemetry.addData("BL: ", backLeftSpeed);
-            telemetry.addData("BR: ", backRightSpeed);
-//            telemetry.addData("ArmMotor",ArmMotor.getCurrentPosition());
-            telemetry.addData("Joystick heading",translationHeading);
-            telemetry.addData("Target rotation",targetRotation);
-            telemetry.addData("Robot rotation",currentRotation);
-            telemetry.addData("Rotation error",rotationError);
-            telemetry.addData("Robot heading",botCentricTranslationDirection);
-            telemetry.addData("rotationCorrectionSpeed",rotationCorrectionSpeed);
-
-            telemetry.update();
+            processTelemetry();
         }
         setMotors(0, 0, 0, 0);
     }

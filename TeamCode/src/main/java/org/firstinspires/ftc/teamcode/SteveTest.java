@@ -63,16 +63,14 @@ public class SteveTest extends LinearOpMode {
     private double translateJoyY = 0.0;
     private double translateTargetJoyX = 0.0;
     private double translateTargetJoyY = 0.0;
-    private double translateDirection;
-    private double translateSpeed;
-    private double targetHeading;
-    private double currentHeading;
-    private double botCentricDirection = 0.0;
-    private double headingError;
-    private double normalizationAngle;
+    private double translationHeading = 0.0;
+    private double targetRotation = 0.0;
+    private double currentRotation = 0.0;
+    private double botCentricTranslationDirection = 0.0;
+    private double rotationError = 0.0;
     private double translationSpeed = 0.0;
     private double normalizationFactor = 1.0;
-    private double headingCorrectionSpeed = 0.0;
+    private double rotationCorrectionSpeed = 0.0;
     private double frontLeftSpeed;
     private double frontRightSpeed;
     private double backLeftSpeed;
@@ -93,8 +91,8 @@ public class SteveTest extends LinearOpMode {
     //Tunable variables
     final private double translationUpdateFactor = 0.05;//Translation joystick tracking rate
     final private double headingCorrectionFactor = 360.0 / 10000.0;//Heading rotation correction 'power' factor
-    final private double minHeadingError = 2.0;//Minimim heading error to actuall act on
-    final private double headingCorrectionSpeedMax = 0.5;//The maximum rotation power factor
+    final private double minHeadingError = 2.0;//Minimim rotation heading error to actually act on
+    final private double rotationCorrectionSpeedMax = 0.5;//The maximum rotation power factor
     final private int    max_base_velocity = 2000;//Max robot base translation velocity
     final private int    max_arm_velocity= 2000;
     final private int    DriveMode = 1;
@@ -241,24 +239,34 @@ public class SteveTest extends LinearOpMode {
     }
 
     /**
-     * Calculate the heading error and limit to +- 180 degrees. Result in degrees
-     * @param targetHeading, currentHeading
+     *
+     * @param value Variable to center
+     * @param range Positive/negative loop range to center on
+     * @return
      */
-
-    public double calculateHeadingError(double targetHeading, double currentHeading) {
+    private double centerRange(double value, double range)
+    {
+        double bounds = range * 2;
+        while (value >= range)  value -= bounds;
+        while (value <= -range) value += bounds;
+        return value;
+    }
+    /**
+     * Calculate the heading error and limit to +- 180 degrees. Result in degrees
+     * @param target, current
+     */
+    public double calculateHeadingError(double target, double current) {
         double robotError;
 
         // calculate error in -179 to +180 range : In degrees
-        robotError = targetHeading - currentHeading;
-        while (robotError >= 180)  robotError -= 360;
-        while (robotError <= -180) robotError += 360;
+        robotError = centerRange(target - current, 180);
 
         //If error is small then ignore it
         if   ((robotError > -minHeadingError) && (robotError < minHeadingError))
         {
             robotError = 0.0;
         }
-        return -robotError;
+        return robotError;
     }
 
     private void setMotors(double FL, double FR, double BL, double BR){
@@ -270,25 +278,31 @@ public class SteveTest extends LinearOpMode {
         BL = BL / max;
         BR = BR / max;
         //Depending on whether using power mode or velocity mode...
+        //Negate directions here so can maintain consistent configurations in initialization
         if (DriveMode == 0)
         {
-            frontLeftDrive.setPower(FL);
-            frontRightDrive.setPower(FR);
-            backLeftDrive.setPower(BL);
-            backRightDrive.setPower(BR);
+            frontLeftDrive.setPower(-FL);
+            frontRightDrive.setPower(-FR);
+            backLeftDrive.setPower(-BL);
+            backRightDrive.setPower(-BR);
         }
         else
         {
-            frontLeftDrive.setVelocity(FL * max_base_velocity);
-            frontRightDrive.setVelocity(FR * max_base_velocity);
-            backLeftDrive.setVelocity(BL * max_base_velocity);
-            backRightDrive.setVelocity(BR * max_base_velocity);
+            frontLeftDrive.setVelocity(-FL * max_base_velocity);
+            frontRightDrive.setVelocity(-FR * max_base_velocity);
+            backLeftDrive.setVelocity(-BL * max_base_velocity);
+            backRightDrive.setVelocity(-BR * max_base_velocity);
         }
-    }
+    }            //Negate directions here so can maintain consistent configurations in initialization
 
+
+    /**
+     * Measure the joystick values, apply the initial offset corrections
+     * and then implement some smoothing to limit jerky transitions
+     */
     private void updateJoysticks()
     {
-        translateTargetJoyX =    -gamepad1.left_stick_x ;
+        translateTargetJoyX =    gamepad1.left_stick_x ;
         translateTargetJoyY =    gamepad1.left_stick_y ;
 
         //For the moment don't do any acceleration control
@@ -340,36 +354,36 @@ public class SteveTest extends LinearOpMode {
     void updateTargetTranslation()
     {
         //Calculate desired translation 'speed' and  direction
-        translateSpeed = Math.sqrt((translateJoyX * translateJoyX) + (translateJoyY * translateJoyY));
+        translationSpeed = Math.sqrt((translateJoyX * translateJoyX) + (translateJoyY * translateJoyY));
 
-        if (translateSpeed > translateDeadband){//Create deadband and also ensure no divide by zero in atan2 and stop robot twitching
+        if (translationSpeed > translateDeadband){//Create deadband and also ensure no divide by zero in atan2 and stop robot twitching
             //Calculate the desired robot base direction
             //Forward = 0 radians (0 degrees)
-            translateDirection = Math.toDegrees(-Math.atan2(translateJoyY, translateJoyX) + (Math.PI/2));
+            translationHeading = centerRange(Math.toDegrees(-Math.atan2(translateJoyY, translateJoyX)) - 90, 180);
         }
         else {
-            translateDirection = 0;
-            translateSpeed = 0;
+            translationHeading = 0;
+            translationSpeed = 0;
         }
     }
 
-    void updateTargetHeading()
+    void updateTargetRotation()
     {
         if (rotateNorth)
         {
-            targetHeading = 0;
+            targetRotation = 0;
         }
         else if (rotateSouth)
         {
-            targetHeading = 180;
+            targetRotation = 180;
         }
         else if (rotateWest)
         {
-            targetHeading = 90;
+            targetRotation = 90;
         }
         else if (rotateEast)
         {
-            targetHeading = -90;
+            targetRotation = -90;
         }
 
     }
@@ -377,47 +391,46 @@ public class SteveTest extends LinearOpMode {
     void calculateMotorSpeeds()
     {
         //Note, the diagonally opposite speeds are the same, so only need to calculate 2 values
-        frontLeftSpeed = translationSpeed*Math.sin(Math.toRadians(botCentricDirection)+(Math.PI/4));
+        frontLeftSpeed = translationSpeed*Math.sin(Math.toRadians(botCentricTranslationDirection) + (Math.PI/4));
+        frontRightSpeed = translationSpeed*Math.cos(Math.toRadians(botCentricTranslationDirection) + (Math.PI/4));
 
-        frontRightSpeed = translationSpeed*Math.cos(Math.toRadians(botCentricDirection+(Math.PI/4)));
-
-        headingCorrectionSpeed = headingError * headingCorrectionFactor;
+        rotationCorrectionSpeed = rotationError * headingCorrectionFactor;
 
         //Clamp the rotational component to 0.5
-        if (headingCorrectionSpeed > headingCorrectionSpeedMax)
+        if (rotationCorrectionSpeed > rotationCorrectionSpeedMax)
         {
-            headingCorrectionSpeed = headingCorrectionSpeedMax;
+            rotationCorrectionSpeed = rotationCorrectionSpeedMax;
         }
-        else if (headingCorrectionSpeed < -headingCorrectionSpeedMax)
+        else if (rotationCorrectionSpeed < -rotationCorrectionSpeedMax)
         {
-            headingCorrectionSpeed = -headingCorrectionSpeedMax;
+            rotationCorrectionSpeed = -rotationCorrectionSpeedMax;
         }
 
 
         //Duplicate diagonal speeds for translation and add in rotation
-        backLeftSpeed   = frontRightSpeed + headingCorrectionSpeed;
-        backRightSpeed  = frontLeftSpeed - headingCorrectionSpeed;
-        frontRightSpeed = frontRightSpeed - headingCorrectionSpeed;
-        frontLeftSpeed  = frontLeftSpeed + headingCorrectionSpeed;
+        backLeftSpeed   = frontRightSpeed + rotationCorrectionSpeed;
+        backRightSpeed  = frontLeftSpeed - rotationCorrectionSpeed;
+        frontRightSpeed = frontRightSpeed - rotationCorrectionSpeed;
+        frontLeftSpeed  = frontLeftSpeed + rotationCorrectionSpeed;
     }
 
     private void doTeleop()
     {
         //Take our initial zero heading from our starting pose
-        targetHeading = getCurrentHeading();
+        targetRotation = getCurrentHeading();
 
         while(opModeIsActive())
         {
-            currentHeading = getCurrentHeading();
+            currentRotation = getCurrentHeading();
             //Get the joystick states
             updateJoysticks();
             //Calculate translation speed and direction from joysticks
             updateTargetTranslation();
             //Update rotation heading
-            //           updateTargetHeading();
+            //           updateTargetRotation();
             //Calculate any heading error
-            headingError = calculateHeadingError(targetHeading, currentHeading);
-            botCentricDirection = translateDirection;
+            rotationError = calculateHeadingError(targetRotation, currentRotation);
+            botCentricTranslationDirection = translationHeading;
             //Now calculate the actual motor speeds
             calculateMotorSpeeds();
             //And actually set the motors accordingly
@@ -434,11 +447,13 @@ public class SteveTest extends LinearOpMode {
             telemetry.addData("FR: ", frontRightSpeed);
             telemetry.addData("BL: ", backLeftSpeed);
             telemetry.addData("BR: ", backRightSpeed);
-            telemetry.addData("ArmMotor",ArmMotor.getCurrentPosition());
-            telemetry.addData("heading",currentHeading);
-            telemetry.addData("targetHeading",targetHeading);
-            telemetry.addData("headingCorrectionSpeed",headingCorrectionSpeed);
-            telemetry.addData("heading error degrees",headingError);
+//            telemetry.addData("ArmMotor",ArmMotor.getCurrentPosition());
+            telemetry.addData("Joystick heading",translationHeading);
+            telemetry.addData("Target rotation",targetRotation);
+            telemetry.addData("Robot rotation",currentRotation);
+            telemetry.addData("Rotation error",rotationError);
+            telemetry.addData("Robot heading",botCentricTranslationDirection);
+            telemetry.addData("rotationCorrectionSpeed",rotationCorrectionSpeed);
 
             telemetry.update();
         }

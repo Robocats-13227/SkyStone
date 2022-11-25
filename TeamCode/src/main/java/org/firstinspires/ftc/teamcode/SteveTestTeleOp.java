@@ -37,15 +37,38 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 
-@TeleOp(name="SteveTest", group="Linear Opmode")
+import java.util.List;
+
+@TeleOp(name="SteveTestTeleOp", group="Linear Opmode")
 
 //@Disabled
-public class SteveTest extends LinearOpMode {
+public class SteveTestTeleOp extends LinearOpMode {
+    //Vision stuff
+    private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
+    // private static final String TFOD_MODEL_FILE  = "/sdcard/FIRST/tflitemodels/CustomTeamModel.tflite";
+    private static final String[] LABELS = {
+            "1 Bolt",
+            "2 Bulb",
+            "3 Panel"
+    };
+    private static final String VUFORIA_KEY =
+            "AU0P2MH/////AAABmfoi+7aXYUEjg8B2vDcLUud9fvZfVGpcY3k05436/jI36D/K+LIWRXdSHpNFox+BjJgVeNd75G+2GOGTr9Lr0lMm6kImHpGtyQVtOydf7OnjplM997QupXTbNfTmD/sT6IsmeS+A1RlmQd77pKlsdiXGjomIdSM5kpMcX4Zio7r5N61Arm5SAIg1SwQKWtca5rhL1sV7RwaUQI14yaUJEUhVKLtrFGXU7AfjrPpkEe4b18GSRBPctJHCzwRDVCDGOnALepHO+000i+6Rt8dS10GfNO5uxQvKfMfC6zWDy8o24tog512wX27SLzHcgMnQDn19R7OuetYWfl08vyR3v4LA+/l/GNuLhVUY0lWAVxNU";
+    private VuforiaLocalizer vuforia;
+    private TFObjectDetector tfod;
+    private int Slot1 = 0;
+    private int Slot2 = 0;
+    private int Slot3 = 0;
+    private int activeSlot = 2;
 
     final private boolean dashboardEnabled = false;//Are we debugging with FtcDashboard ?
     final private int gyroOrientation = -1;//Set to either +1 or -1 depending on control hub mountint orientation
@@ -135,7 +158,6 @@ public class SteveTest extends LinearOpMode {
         Claw1_servo = hardwareMap.get(Servo.class,"Claw");
         Claw2_servo = hardwareMap.get(Servo.class,"Claw2");
 
-
         // Motors on one side need to effectively run 'backwards' to move 'forward'
         // Reverse the motors that runs backwards when connected directly to the battery
         frontLeftDrive.setDirection(DcMotorEx.Direction.REVERSE);
@@ -212,11 +234,96 @@ public class SteveTest extends LinearOpMode {
         return angles.firstAngle;
     }
 
+    /**
+     * Initialize the Vuforia localization engine.
+     */
+    private void initVuforia() {
+        /*
+         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
+         */
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+        //  Instantiate the Vuforia engine
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+    }
+
+    /**
+     * Initialize the TensorFlow Object Detection engine.
+     */
+    private void initTfod() {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.75f;
+        tfodParameters.isModelTensorFlow2 = true;
+        tfodParameters.inputSize = 300;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+
+        // Use loadModelFromAsset() if the TF Model is built in as an asset by Android Studio
+        // Use loadModelFromFile() if you have downloaded a custom team model to the Robot Controller's FLASH.
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
+        // tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
+    }
+
+    private void initializeVision()
+    {
+        initVuforia();
+        initTfod();
+        if (tfod != null) {
+            tfod.activate();
+            // The TensorFlow software will scale the input images from the camera to a lower resolution.
+            // This can result in lower detection accuracy at longer distances (> 55cm or 22").
+            // If your target is at distance greater than 50 cm (20") you can increase the magnification value
+            // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
+            // should be set to the value of the images used to create the TensorFlow Object Detection model
+            // (typically 16/9).
+            tfod.setZoom(1.0, 16.0/9.0);
+        }
+    }
+
+    /*
+    Check if anything detected. If yes then scan through the list and count the
+    number of instances that each object is seen.
+    Whatever is 'seen' most often is the most likely 'really' seen object
+     */
+    private void scanVision()
+    {
+        if (tfod != null) {
+            // getUpdatedRecognitions() will return null if no new information is available since
+            // the last time that call was made.
+            List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+            if (updatedRecognitions != null) {
+//                telemetry.addData("# Objects Detected", updatedRecognitions.size());
+
+                // step through the list of recognitions and display image position/size information for each one
+                // Note: "Image number" refers to the randomized image orientation/number
+                for (Recognition recognition : updatedRecognitions) {
+                    if (LABELS[0] == recognition.getLabel())
+                    {
+                        Slot1++;
+                    }
+                    else if (LABELS[1] == recognition.getLabel())
+                    {
+                        Slot2++;
+                    }
+                    else
+                    {
+                        Slot3++;
+                    }
+                }
+            }
+        }
+    }
+
     private void waitStart(){
         // Wait for the game to start (driver presses PLAY)
         //Can use this time to process the vision in order to get the vision marker ASAP
         // Abort this loop is started or stopped.
         while (!(isStarted() || isStopRequested())) {
+            scanVision();
             idle();
         }
     }
@@ -236,6 +343,7 @@ public class SteveTest extends LinearOpMode {
         telemetry.addData("Status", "Initializing hardware");
         telemetry.update();
 
+        initializeVision();
         initializeMotors();
         initializeGyro();
         initializeJoysticks();
@@ -550,6 +658,7 @@ public class SteveTest extends LinearOpMode {
         telemetry.addData("Rotation error",rotationError);
         telemetry.addData("Robot heading",botCentricTranslationDirection);
         telemetry.addData("rotationCorrectionSpeed",rotationCorrectionSpeed);
+        telemetry.addData("Vision slot",activeSlot);
 
         telemetry.update();
     }
@@ -593,6 +702,33 @@ public class SteveTest extends LinearOpMode {
         setMotors(0, 0, 0, 0);
     }
 
+    private void findActiveSlot()
+    {
+        //NOTE : This ordering should return slot2 if they ar all the same
+        //or if there are 2 the same including slot 2
+        //Slot 2 is the easiest to navigate to is we are unsure
+        if (Slot1 > Slot2)
+        {
+            if (Slot1 > Slot3){
+                activeSlot = 1;
+            }
+            else
+            {
+                activeSlot = 3;
+            }
+        }
+        else //slot 2 >= slot 1
+        {
+            if (Slot3 > Slot2){
+                activeSlot = 3;
+            }
+            else
+            {
+                activeSlot = 2;
+            }
+        }
+    }
+
     /**
      * This is the main op mode and should call all the initialization, wait for start,
      * execute your desired auto/tele-op, then stop everything
@@ -609,8 +745,9 @@ public class SteveTest extends LinearOpMode {
 //        telemetry = dashboard.getTelemetry();
         }
         // Wait for the game to start (driver presses PLAY)
-        //Note, we can use this time to be processing the vision to have the skystone location ready ASAP.
+        //Note, we can use this time to be processing the vision to have the icon image ready ASAP.
         waitStart();
+        findActiveSlot();
         runtime.reset();
 
         doTeleop();

@@ -10,22 +10,21 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.openftc.apriltag.AprilTagDetection;
-import org.openftc.easyopencv.OpenCvCamera;
-import org.openftc.easyopencv.OpenCvCameraFactory;
-import org.openftc.easyopencv.OpenCvCameraRotation;
-
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.openftc.apriltag.AprilTagDetection;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous (name = "AutonMechanicat",group = "Mechanicats")
 
-        public class AutonMechanicat extends LinearOpMode{
+
+        public class AutoTest extends LinearOpMode{
     OpenCvCamera camera;
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
     //set motors
@@ -36,7 +35,7 @@ import java.util.ArrayList;
     private DcMotorEx Arm_Motor = null;
     /// IMPORTANT STUFF AHEAD ///
     /// CHANGE BASED ON WHICH ROBOT ///
-        final public int Robot = 1;    //1 = GERALD: 2 = REGINALD:
+        final public int Robot = 2;    //1 = GERALD: 2 = REGINALD:
 
     static final double FEET_PER_METER = 3.28084;
 
@@ -81,7 +80,7 @@ import java.util.ArrayList;
 
 
     final public int max_velo = 1000;
-    final public int max_arm_velo =4000;
+    final public int max_arm_velo =3000;
 
     final public int BOTTOM_ARM_POS = 500;
     //TODO get encoder value
@@ -144,6 +143,13 @@ import java.util.ArrayList;
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Arm_Motor.setVelocity(max_arm_velo);
     }
+
+    private double getGyroHeading(){
+        //  return gyro.getIntegratedZValue();
+        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        return angles.firstAngle;
+    }
+
     public void liftArmGoGroundJunction()
     {
         Arm_Motor.setTargetPosition(BOTTOM_ARM_POS);
@@ -336,21 +342,26 @@ import java.util.ArrayList;
          private void AutogoRightSlot()
         {
             if(Robot == 2){
-                Right(15,.6);
+               // Right(18,.6);
+                driveTranslation(15,90,.6);
             }
             else {
-                Right(15,.6);
+               // Right(20,.6);
+                driveTranslation(20,90,.6);
             }
-            driveHeading(15,0,.7);
+            driveHeading(30,0,.7);
         }
         private void AutogoLeftSlot()
         {   if(Robot == 2) {
-                Left(14,.6);
-            }
+                //Left(16,.6);
+                driveTranslation(16,-90,.6);
+
+        }
             else{
-                Left(15,.6);
+               // Left(16,.6);
+                driveTranslation(16,-90,.6);
             }
-            driveHeading(15,0,.7);
+            driveHeading(20,0,.7);
         }
 
 
@@ -488,7 +499,7 @@ import java.util.ArrayList;
             double speedCorrection = 0;
             double leftSpeed;
             double rightSpeed;
-            double gain = .06;
+            double gain = .03;
             int distanceTraveled;
             int wantedPosition = (int) ((distanceInInches / DistancePerTick)* fudge);
 

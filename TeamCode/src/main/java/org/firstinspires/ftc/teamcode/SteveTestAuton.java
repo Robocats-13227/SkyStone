@@ -31,6 +31,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -52,20 +53,11 @@ import java.util.List;
 
 @Autonomous(name="SteveTestAutonOp", group="Linear Opmode")
 
-//@Disabled
+@Disabled
 public class SteveTestAuton extends LinearOpMode {
-    //Vision stuff
-    private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
-    // private static final String TFOD_MODEL_FILE  = "/sdcard/FIRST/tflitemodels/CustomTeamModel.tflite";
-    private static final String[] LABELS = {
-            "1 Bolt",
-            "2 Bulb",
-            "3 Panel"
-    };
     private static final String VUFORIA_KEY =
             "AU0P2MH/////AAABmfoi+7aXYUEjg8B2vDcLUud9fvZfVGpcY3k05436/jI36D/K+LIWRXdSHpNFox+BjJgVeNd75G+2GOGTr9Lr0lMm6kImHpGtyQVtOydf7OnjplM997QupXTbNfTmD/sT6IsmeS+A1RlmQd77pKlsdiXGjomIdSM5kpMcX4Zio7r5N61Arm5SAIg1SwQKWtca5rhL1sV7RwaUQI14yaUJEUhVKLtrFGXU7AfjrPpkEe4b18GSRBPctJHCzwRDVCDGOnALepHO+000i+6Rt8dS10GfNO5uxQvKfMfC6zWDy8o24tog512wX27SLzHcgMnQDn19R7OuetYWfl08vyR3v4LA+/l/GNuLhVUY0lWAVxNU";
     private VuforiaLocalizer vuforia;
-    private TFObjectDetector tfod;
     private int Slot1 = 0;
     private int Slot2 = 0;
     private int Slot3 = 0;
@@ -251,38 +243,9 @@ public class SteveTestAuton extends LinearOpMode {
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
     }
 
-    /**
-     * Initialize the TensorFlow Object Detection engine.
-     */
-    private void initTfod() {
-        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-        tfodParameters.minResultConfidence = 0.75f;
-        tfodParameters.isModelTensorFlow2 = true;
-        tfodParameters.inputSize = 300;
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-
-        // Use loadModelFromAsset() if the TF Model is built in as an asset by Android Studio
-        // Use loadModelFromFile() if you have downloaded a custom team model to the Robot Controller's FLASH.
-        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
-        // tfod.loadModelFromFile(TFOD_MODEL_FILE, LABELS);
-    }
-
     private void initializeVision()
     {
         initVuforia();
-        initTfod();
-        if (tfod != null) {
-            tfod.activate();
-            // The TensorFlow software will scale the input images from the camera to a lower resolution.
-            // This can result in lower detection accuracy at longer distances (> 55cm or 22").
-            // If your target is at distance greater than 50 cm (20") you can increase the magnification value
-            // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
-            // should be set to the value of the images used to create the TensorFlow Object Detection model
-            // (typically 16/9).
-            tfod.setZoom(1.0, 16.0/9.0);
-        }
     }
 
     /*
@@ -292,31 +255,6 @@ public class SteveTestAuton extends LinearOpMode {
      */
     private void scanVision()
     {
-        if (tfod != null) {
-            // getUpdatedRecognitions() will return null if no new information is available since
-            // the last time that call was made.
-            List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
-            if (updatedRecognitions != null) {
-//                telemetry.addData("# Objects Detected", updatedRecognitions.size());
-
-                // step through the list of recognitions and display image position/size information for each one
-                // Note: "Image number" refers to the randomized image orientation/number
-                for (Recognition recognition : updatedRecognitions) {
-                    if (LABELS[0] == recognition.getLabel())
-                    {
-                        Slot1++;
-                    }
-                    else if (LABELS[1] == recognition.getLabel())
-                    {
-                        Slot2++;
-                    }
-                    else
-                    {
-                        Slot3++;
-                    }
-                }
-            }
-        }
         telemetry.addData("Slot1",Slot1);
         telemetry.addData("Slot2",Slot2);
         telemetry.addData("Slot3",Slot3);
@@ -328,7 +266,6 @@ public class SteveTestAuton extends LinearOpMode {
         //Can use this time to process the vision in order to get the vision marker ASAP
         // Abort this loop is started or stopped.
         while (!(isStarted() || isStopRequested())) {
-            scanVision();
             idle();
         }
     }
@@ -708,6 +645,10 @@ public class SteveTestAuton extends LinearOpMode {
 
     private void findActiveSlot()
     {
+        while(opModeIsActive() && (runtime.seconds() < 4)) //Scan for max time of 4 seconds
+        {
+            scanVision();
+        }
         //NOTE : This ordering should return slot2 if they ar all the same
         //or if there are 2 the same including slot 2
         //Slot 2 is the easiest to navigate to is we are unsure
@@ -751,8 +692,8 @@ public class SteveTestAuton extends LinearOpMode {
         // Wait for the game to start (driver presses PLAY)
         //Note, we can use this time to be processing the vision to have the icon image ready ASAP.
         waitStart();
-        findActiveSlot();
         runtime.reset();
+        findActiveSlot();
 
         doAuton();
 

@@ -50,14 +50,19 @@ public class Main_tele_op extends LinearOpMode {
     //TODO get encoder value
     final public int MEDIUM_ARM_POS = 3147 ; // = 23 inches
 
-    final public int TOP_ARM_POS = 4043; // = 33 inches
+    final public int TOP_ARM_POS = 4143; // = 33 inches
 
     final public double TRIGGER_DEADZONE = 0.1;
 
     public boolean Slow = true;
 
-    public int arm_max_velo= (int)(2000*.50);
+    public int arm_max_velo_trigger= (int)(3000*.50);
+    public int arm_max_velo_dpad= (int)(2000*.50);
+
     public int max_velo = 2000;
+
+    public double JoyStickNormalizeY;
+    public double JoyStickNormalizeX;
 
     public int ArmMoveSpeed = 200;
 
@@ -68,41 +73,43 @@ public class Main_tele_op extends LinearOpMode {
         int current_pos = Arm_Motor.getCurrentPosition();
         if (( Arm_Motor.getCurrentPosition() < TOP_ARM_POS-ArmMoveSpeed) && (gamepad2.right_trigger > TRIGGER_DEADZONE) )
         {
+                Arm_Motor.setVelocity(arm_max_velo_trigger*(gamepad2.right_trigger));
                 Arm_Motor.setTargetPosition(current_pos+ArmMoveSpeed);
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                Arm_Motor.setVelocity(max_velo);
+
         }
         else if((Arm_Motor.getCurrentPosition() > 0+ArmMoveSpeed) &&  (gamepad2.left_trigger > TRIGGER_DEADZONE))
         {
+            Arm_Motor.setVelocity(arm_max_velo_trigger*(gamepad2.left_trigger));
             Arm_Motor.setTargetPosition(current_pos-ArmMoveSpeed);
             Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            Arm_Motor.setVelocity(arm_max_velo);
+
         }
 
             else if (gamepad2.dpad_down)
             {
                 Arm_Motor.setTargetPosition(BOTTOM_ARM_POS);
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                Arm_Motor.setVelocity(arm_max_velo);
+                Arm_Motor.setVelocity(arm_max_velo_dpad);
             }
             else if (gamepad2.dpad_right)
             {
                 Arm_Motor.setTargetPosition(LOW_ARM_POS);
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                Arm_Motor.setVelocity(arm_max_velo);
+                Arm_Motor.setVelocity(arm_max_velo_dpad);
 
             }
             else if (gamepad2.dpad_left)
             {
                 Arm_Motor.setTargetPosition(MEDIUM_ARM_POS);
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                Arm_Motor.setVelocity(arm_max_velo);
+                Arm_Motor.setVelocity(arm_max_velo_dpad);
 
             }
             else if (gamepad2.dpad_up) {
                 Arm_Motor.setTargetPosition(TOP_ARM_POS);
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                Arm_Motor.setVelocity(arm_max_velo);
+                Arm_Motor.setVelocity(arm_max_velo_dpad);
             }
 
 
@@ -119,7 +126,9 @@ public class Main_tele_op extends LinearOpMode {
         Claw_servo = hardwareMap.get(Servo.class,"Claw");
         Claw_2 = hardwareMap.get(Servo.class,"Claw2");
 
-        Claw_servo.setPosition(0);
+        //Claw_servo.setPosition(0);
+        claw_grab();
+        sleep(500);
 
         Arm_Motor = hardwareMap.get(DcMotorEx.class,"Arm");
 
@@ -143,6 +152,8 @@ public class Main_tele_op extends LinearOpMode {
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Arm_Motor.setVelocity(max_velo);
 
+        setJoystickToZero();
+
 
         // Retrieve the IMU from the hardware map
         imu = hardwareMap.get(BNO055IMU.class, "imu");
@@ -152,6 +163,26 @@ public class Main_tele_op extends LinearOpMode {
         // Without this, data retrieving from the IMU throws an exception
         imu.initialize(parameters);
     }
+
+    public void claw_drop()
+    {
+        Claw_servo.setPosition(0);
+        Claw_2.setPosition(1);
+    }
+
+    public void setJoystickToZero()
+    {
+         JoyStickNormalizeY = gamepad1.left_stick_y;
+         JoyStickNormalizeX =gamepad1.left_stick_x;
+
+    }
+
+    public void claw_grab()
+    {
+        Claw_servo.setPosition(1);
+        Claw_2.setPosition(0);
+    }
+
 
     public void process_motion()
     {
@@ -220,7 +251,7 @@ public class Main_tele_op extends LinearOpMode {
         target_1x = gamepad1.left_stick_x;
         target_1y = gamepad1.left_stick_y;
 
-        if(target_1x > joystick_1x )
+        if(target_1x > joystick_1x+ JoyStickNormalizeX)
         {
             if(joystick_1x +Stick_interval > target_1x)
             {
@@ -231,7 +262,7 @@ public class Main_tele_op extends LinearOpMode {
                 joystick_1x+=Stick_interval;
             }
         }
-        if (target_1x < joystick_1x)
+        if (target_1x < joystick_1x-JoyStickNormalizeX)
         {
             if(joystick_1x -Stick_interval < target_1x)
             {
@@ -244,7 +275,7 @@ public class Main_tele_op extends LinearOpMode {
         }
 
 
-         if(target_1y > joystick_1y )
+         if(target_1y > joystick_1y+JoyStickNormalizeY )
          {
              if(joystick_1y +Stick_interval > target_1y)
              {
@@ -255,7 +286,7 @@ public class Main_tele_op extends LinearOpMode {
              joystick_1y+=Stick_interval;
              }
          }
-        if (target_1y < joystick_1y)
+        if (target_1y < joystick_1y-JoyStickNormalizeY)
         {
             if(joystick_1y -Stick_interval < target_1y)
             {

@@ -30,6 +30,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -51,15 +52,21 @@ import java.util.List;
 
 @TeleOp(name="SteveTestTeleOp", group="Linear Opmode")
 
-//@Disabled
+@Disabled
 public class SteveTestTeleOp extends LinearOpMode {
     //Vision stuff
-    private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
-    // private static final String TFOD_MODEL_FILE  = "/sdcard/FIRST/tflitemodels/CustomTeamModel.tflite";
+//    private static final String TFOD_MODEL_ASSET = "PowerPlay.tflite";
+//    private static final String[] LABELS = {
+//            "1 Bolt",
+//            "2 Bulb",
+//            "3 Panel"
+//    };
+    //private static final String TFOD_MODEL_ASSET  = "/sdcard/FIRST/tflitemodels/flags.tflite";
+    private static final String TFOD_MODEL_ASSET  = "flags.tflite";
     private static final String[] LABELS = {
-            "1 Bolt",
-            "2 Bulb",
-            "3 Panel"
+            "1 Scotland",
+            "2 US",
+            "3 UK"
     };
     private static final String VUFORIA_KEY =
             "AU0P2MH/////AAABmfoi+7aXYUEjg8B2vDcLUud9fvZfVGpcY3k05436/jI36D/K+LIWRXdSHpNFox+BjJgVeNd75G+2GOGTr9Lr0lMm6kImHpGtyQVtOydf7OnjplM997QupXTbNfTmD/sT6IsmeS+A1RlmQd77pKlsdiXGjomIdSM5kpMcX4Zio7r5N61Arm5SAIg1SwQKWtca5rhL1sV7RwaUQI14yaUJEUhVKLtrFGXU7AfjrPpkEe4b18GSRBPctJHCzwRDVCDGOnALepHO+000i+6Rt8dS10GfNO5uxQvKfMfC6zWDy8o24tog512wX27SLzHcgMnQDn19R7OuetYWfl08vyR3v4LA+/l/GNuLhVUY0lWAVxNU";

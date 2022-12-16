@@ -36,7 +36,7 @@ import java.util.ArrayList;
     private DcMotorEx Arm_Motor = null;
     /// IMPORTANT STUFF AHEAD ///
     /// CHANGE BASED ON WHICH ROBOT ///
-        final public int Robot = 1;    //1 = GERALD: 2 = REGINALD:
+        final public int Robot = 2;    //1 = GERALD: 2 = REGINALD:
 
     static final double FEET_PER_METER = 3.28084;
 
@@ -242,7 +242,7 @@ import java.util.ArrayList;
             telemetry.addData("slot1",Slot1);
             telemetry.addData("slot2",Slot2);
             telemetry.addData("slot3",Slot3);
-            telemetry.update();
+
 
         }
         //NOTE : This ordering should return slot2 if they ar all the same
@@ -288,6 +288,14 @@ import java.util.ArrayList;
                 telemetry.addData("slot1",Slot1);
                 telemetry.addData("slot2",Slot2);
                 telemetry.addData("slot3",Slot3);
+                if(Robot == 1) {
+                    telemetry.addLine("Robot is gerald");
+                }
+                else
+                {
+                    telemetry.addLine("Robot is reginald");
+                }
+                telemetry.update();
 
                 telemetry.addData("last seen",LastSeen);
                 telemetry.update();
@@ -336,21 +344,21 @@ import java.util.ArrayList;
          private void AutogoRightSlot()
         {
             if(Robot == 2){
-                Right(15,.6);
+                Right(18,.6);
             }
             else {
-                Right(15,.6);
+                Right(20,.6);
             }
-            driveHeading(15,0,.7);
+            driveHeading(18,0,.7);
         }
         private void AutogoLeftSlot()
         {   if(Robot == 2) {
-                Left(14,.6);
+                Left(18,.6);
             }
             else{
-                Left(15,.6);
+                Left(20,.6);
             }
-            driveHeading(15,0,.7);
+            driveHeading(18,0,.7);
         }
 
 

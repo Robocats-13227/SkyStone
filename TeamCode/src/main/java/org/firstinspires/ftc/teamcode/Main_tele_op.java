@@ -37,6 +37,8 @@ public class Main_tele_op extends LinearOpMode {
     final public double ANGLE_MULTIPLIER = 5;
     final public double Stick_interval = .2;
 
+    public boolean LBPressedBefore;
+
 
 
     BNO055IMU imu;
@@ -56,8 +58,8 @@ public class Main_tele_op extends LinearOpMode {
 
     public boolean Slow = true;
 
-    public int arm_max_velo_trigger= (int)(3000*.50);
-    public int arm_max_velo_dpad= (int)(2000*.50);
+    public int arm_max_velo_trigger= (3000);
+    public int arm_max_velo_dpad= (2000);
 
     public int max_velo = 2000;
 
@@ -88,33 +90,29 @@ public class Main_tele_op extends LinearOpMode {
 
             else if (gamepad2.dpad_down)
             {
+                Arm_Motor.setVelocity(arm_max_velo_dpad);
                 Arm_Motor.setTargetPosition(BOTTOM_ARM_POS);
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                Arm_Motor.setVelocity(arm_max_velo_dpad);
             }
             else if (gamepad2.dpad_right)
             {
+                Arm_Motor.setVelocity(arm_max_velo_dpad);
                 Arm_Motor.setTargetPosition(LOW_ARM_POS);
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                Arm_Motor.setVelocity(arm_max_velo_dpad);
 
             }
             else if (gamepad2.dpad_left)
             {
+                Arm_Motor.setVelocity(arm_max_velo_dpad);
                 Arm_Motor.setTargetPosition(MEDIUM_ARM_POS);
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                Arm_Motor.setVelocity(arm_max_velo_dpad);
 
             }
             else if (gamepad2.dpad_up) {
+            Arm_Motor.setVelocity(arm_max_velo_dpad);
                 Arm_Motor.setTargetPosition(TOP_ARM_POS);
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                Arm_Motor.setVelocity(arm_max_velo_dpad);
             }
-
-
-
-
     }
 
     public void initialize()
@@ -218,8 +216,7 @@ public class Main_tele_op extends LinearOpMode {
         double backLeftPower = (y - x + rx) / denominator;
         double frontRightPower = (y - x - rx) / denominator;
         double backRightPower = (y + x - rx) / denominator;
-
-        if (gamepad1.left_bumper)
+        if(gamepad1.left_bumper && !LBPressedBefore)
         {
             if(Slow)
             {
@@ -230,6 +227,7 @@ public class Main_tele_op extends LinearOpMode {
                 Slow = true;
             }
         }
+        LBPressedBefore = gamepad1.left_bumper;
 
         if(Slow)
         {

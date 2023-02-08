@@ -73,6 +73,8 @@ public class Main_tele_op extends LinearOpMode {
     {
 
         int current_pos = Arm_Motor.getCurrentPosition();
+
+
         if (( Arm_Motor.getCurrentPosition() < TOP_ARM_POS-ArmMoveSpeed) && (gamepad2.right_trigger > TRIGGER_DEADZONE) )
         {
                 Arm_Motor.setVelocity(arm_max_velo_trigger*(gamepad2.right_trigger));
@@ -171,7 +173,7 @@ public class Main_tele_op extends LinearOpMode {
     public void setJoystickToZero()
     {
          JoyStickNormalizeY = gamepad1.left_stick_y;
-         JoyStickNormalizeX =gamepad1.left_stick_x;
+         JoyStickNormalizeX = gamepad1.left_stick_x;
 
     }
 

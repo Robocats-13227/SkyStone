@@ -10,33 +10,31 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.openftc.apriltag.AprilTagDetection;
-import org.openftc.easyopencv.OpenCvCamera;
-import org.openftc.easyopencv.OpenCvCameraFactory;
-import org.openftc.easyopencv.OpenCvCameraRotation;
-
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.openftc.apriltag.AprilTagDetection;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous (name = "AutonMechanicat",group = "Mechanicats")
+@Autonomous (name = "AutonMechanicatRight",group = "Mechanicats")
 
-        public class AutonMechanicat extends LinearOpMode{
+        public class AutonMechanicatRight extends LinearOpMode{
     OpenCvCamera camera;
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
     //set motors
-    private DcMotor frontRight = null;
-    private DcMotor frontLeft = null;
-    private DcMotor backRight = null;
-    private DcMotor backLeft = null;
+    private DcMotorEx frontRight = null;
+    private DcMotorEx frontLeft = null;
+    private DcMotorEx backRight = null;
+    private DcMotorEx backLeft = null;
     private DcMotorEx Arm_Motor = null;
     /// IMPORTANT STUFF AHEAD ///
     /// CHANGE BASED ON WHICH ROBOT ///
-        final public int Robot = 2;    //1 = GERALD: 2 = REGINALD:
 
     static final double FEET_PER_METER = 3.28084;
 
@@ -57,9 +55,10 @@ import java.util.ArrayList;
    private int Slot2 = 0;
    private int Slot3 = 0;
    private int activeSlot = 2;
-   public boolean left = false;
-   public boolean blue = true;
-   public int slots;
+
+   public boolean blue = false;
+    int LeftRight;
+    public int slots;
 
    private Servo Claw = null;
    private Servo Claw_2 = null;
@@ -142,11 +141,17 @@ import java.util.ArrayList;
     {
         Arm_Motor.setTargetPosition(0);
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        Arm_Motor.setVelocity(max_arm_velo);
+        Arm_Motor.setVelocity(-max_arm_velo);
     }
     public void liftArmGoGroundJunction()
     {
         Arm_Motor.setTargetPosition(BOTTOM_ARM_POS);
+        Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        Arm_Motor.setVelocity(max_arm_velo);
+    }
+    public void liftArmGoLow()
+    {
+        Arm_Motor.setTargetPosition(LOW_ARM_POS);
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Arm_Motor.setVelocity(max_arm_velo);
     }
@@ -172,8 +177,8 @@ import java.util.ArrayList;
 
     public void claw_drop()
     {
-        Claw.setPosition(.2);
-        Claw_2.setPosition(.7);
+        Claw.setPosition(.4);
+        Claw_2.setPosition(.5);
     }
 
     public void claw_grab()
@@ -217,6 +222,7 @@ import java.util.ArrayList;
                 if(tag.id == 1) //Tags are standard specified tag IDs. Robocats are using 0, 1 and 2
                 {
                     Slot1++;
+
                     break;
                 }
                 else if(tag.id == 2) //Tags are standard specified tag IDs. Robocats are using 0, 1 and 2
@@ -271,6 +277,39 @@ import java.util.ArrayList;
 
     }
 
+
+    public void runAuto1()
+    {
+
+
+            driveHeading(2, 0, .5);
+            sleep(1000);
+            Strafe(10, .15, -1);
+            sleep(500);
+            liftArmGoLow();
+            driveHeading(2, 0, .1);
+            Arm_Motor.setTargetPosition(1400);
+            Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            Arm_Motor.setVelocity(2000);
+            sleep(1000);
+            claw_drop();
+            sleep(500);
+            driveHeading(-2, 0, .5);
+            liftArmGoGround();
+
+            if (activeSlot == 2) {
+                AutogoForwardSlot(10);
+            } else if (activeSlot == 3) {
+                AutogoRightSlot( 30);
+            } else {
+                AutogoLeftSlot(9);
+            }
+
+        liftArmGoGround();
+        sleep(3000);    //time to let all functions finish
+
+    }
+
     @Override
         public void runOpMode() {
 
@@ -284,81 +323,75 @@ import java.util.ArrayList;
 
             while(!isStarted())
             {
-                ScanTags();
+
+                ScanTags();   //should wait 2 sec until runtime is 4 sec
+                runtime.reset();
                 telemetry.addData("slot1",Slot1);
                 telemetry.addData("slot2",Slot2);
                 telemetry.addData("slot3",Slot3);
-                if(Robot == 1) {
-                    telemetry.addLine("Robot is gerald");
-                }
-                else
-                {
-                    telemetry.addLine("Robot is reginald");
-                }
+
+
                 telemetry.update();
+
+
 
                 telemetry.addData("last seen",LastSeen);
-                telemetry.update();
-
             }
-            runtime.reset();
+        //reset scanner
+                Slot1 = 0;
+                Slot2 = 0;
+                Slot3 = 0;
+                FindActiveSlot();
 
-            //reset scanner
-            Slot1 = 0;
-            Slot2 = 0;
-            Slot3 = 0;
+
 
             Claw.setPosition(1);
             Claw_2.setPosition(0);
             sleep(2000);
             //liftArmGoGroundJunction();
             liftArmGoAuto();
-            FindActiveSlot();   //should wait 2 sec until runtime is 4 sec
             telemetry.addData("Mode", "running");
+            telemetry.addData("Active Slot",activeSlot);
             telemetry.update();
 
-            if(activeSlot == 2)
-            {
-                AutogoForwardSlot();
+            runAuto1();
+            //runAuto2();
 
-            }
-            else if(activeSlot == 3)
-            {
-                AutogoRightSlot();
-            }
-            else
-            {
-                AutogoLeftSlot();
-            }
 
-            sleep(2000);
-            liftArmGoGround();
-            sleep(2000);    //time to let all functions finish
+
+
 
 
     }
-        private void AutogoForwardSlot()
+        private void AutogoForwardSlot(int Distance)
         {
-            driveHeading(22,0,.7);
+            sleep(1000);
+            Strafe(Distance, .5, 1);
+            driveHeading(20,0,.5);
+
         }
-         private void AutogoRightSlot()
+
+         private void AutogoRightSlot(int Distance)
         {
-            if(Robot == 2){
-                Right(18,.6);
-            }
-            else {
-                Right(20,.6);
-            }
-            driveHeading(18,0,.7);
+            sleep(1000);
+            int loop = 0;
+            int ChangeDirection = 1;
+            Strafe(Distance,.3,1);
+            driveHeading(20,0,.5);
+
+
+
         }
-        private void AutogoLeftSlot()
-        {   if(Robot == 2) {
-                Left(18,.6);
-            }
-            else{
-                Left(20,.6);
-            }
-            driveHeading(18,0,.7);
+        private void AutogoLeftSlot(int Distance) {
+            sleep(1000);
+            int loop = 0;
+            int ChangeDirection = 1;
+            Strafe(Distance,.5,-1);
+            driveHeading(20,0,.5);
+        }
+        private void Test()
+        {
+            driveHeading(12,0,.5);
         }
 
 
@@ -375,39 +408,96 @@ import java.util.ArrayList;
 
             int currentPosition = 0;
             int wantedPosition = (int) ((distanceInInches / DistancePerTick)* fudge);
-
+            imu.getAngularOrientation();
             resetEncoders();
 
             while ((currentPosition < wantedPosition) && opModeIsActive()){
-                telemetry.addData("value of current position", currentPosition);
-                telemetry.update();
+
 
                 frontRight.setPower(-speed);
                 frontLeft.setPower(speed);
                 backRight.setPower(speed);
                 backLeft.setPower(-speed);
+        /*
+               frontRight.setVelocity(-speed*max_velo);
+                frontLeft.setVelocity(speed*max_velo);
+                backRight.setVelocity(speed*max_velo);
+                backLeft.setVelocity(-speed*max_velo);
                 currentPosition = (frontLeft.getCurrentPosition() + backRight.getCurrentPosition()) / 2;
+         */
             }
 
             hardStop();
 
         }
 
-        private void Right(int distanceInInches, double speed){
+
+        private void SetToTargetHeading(int targetHeading)
+        {
+
+            int error;
+            int speedCorrection;
+            int leftSpeed;
+            int rightSpeed;
+            double currentHeading = getAngle();
+
+            //Calculate how far off we are
+            error = (int)(currentHeading - targetHeading);
+
+            //Using the error calculate some correction factor
+            speedCorrection = error * 10;
+
+            //Adjust the left and right power to try and compensate for the error
+            leftSpeed  =  speedCorrection;
+            rightSpeed = -speedCorrection;
+
+            while (error>5 && error<-5 )
+            {
+            backRight.setPower(rightSpeed);
+            frontRight.setPower(rightSpeed);
+            backLeft.setPower(leftSpeed);
+            frontLeft.setPower(leftSpeed);
+            }
+
+
+        }
+
+        private void Right(int distanceInInches, double speed ){
 
             int currentPosition = 0;
             int wantedPosition = (int) ((distanceInInches / DistancePerTick) * fudge);
+            double targetHeading = getAngle();
 
             resetEncoders();
 
-            while ((currentPosition < wantedPosition) && opModeIsActive()){
-                telemetry.addData("value of current position", currentPosition);
-                telemetry.update();
 
-                frontRight.setPower(speed);
-                frontLeft.setPower(-speed);
-                backRight.setPower(-speed);
-                backLeft.setPower(speed);
+            while ((currentPosition < wantedPosition) && opModeIsActive()){
+
+
+                double currentHeading = targetHeading;
+
+                //Calculate how far off we are
+                double error = currentHeading - targetHeading;
+
+                //Using the error calculate some correction factor
+                double speedCorrection = error * .01;
+
+                //Adjust the left and right power to try and compensate for the error
+                /*
+                 leftSpeed = speed + speedCorrection;
+                 rightSpeed = speed - speedCorrection;
+                 */
+
+                frontRight.setPower(speed - speedCorrection);
+                frontLeft.setPower(-speed + speedCorrection);
+                backRight.setPower(-speed + speedCorrection);
+                backLeft.setPower(speed - speedCorrection);
+/*
+                frontRight.setVelocity(speed*max_velo);
+                frontLeft.setVelocity(-speed*max_velo);
+                backRight.setVelocity(-speed*max_velo);
+                backLeft.setVelocity(speed*max_velo);
+ */
                 currentPosition = (frontRight.getCurrentPosition() + backLeft.getCurrentPosition()) / 2;
             }
 
@@ -415,6 +505,110 @@ import java.util.ArrayList;
 
         }
 
+    private void Strafe(int distanceInInches, double speed, int LeftRight ){
+
+        int currentPosition = 0;
+        double currentHeading;
+        int wantedPosition = (int) ((distanceInInches / DistancePerTick) * fudge);
+        double targetHeading = getAngle();
+
+        resetEncoders();
+
+        while ((Math.abs(currentPosition) < wantedPosition) && opModeIsActive()){
+
+
+            currentHeading = getAngle();
+
+            //Calculate how far off we are
+            double error = currentHeading - targetHeading;
+
+            //Using the error calculate some correction factor
+            double speedCorrection = -error * 0.02;
+
+            //Adjust the left and right power to try and compensate for the error
+                /*
+                 leftSpeed = speed + speedCorrection;
+                 rightSpeed = speed - speedCorrection;
+                 */
+
+            double MotorSpeed1 = speed ;
+            double MotorSpeed2 = -speed ;
+
+            telemetry.addData("error",error);
+            telemetry.addData("motor1",MotorSpeed1);
+            telemetry.addData("motor2",MotorSpeed2);
+            telemetry.addData("Speed correction",speedCorrection);
+            telemetry.update();
+
+            frontRight.setPower((MotorSpeed1*LeftRight) + speedCorrection);
+            frontLeft.setPower((MotorSpeed2*LeftRight) - speedCorrection);
+            backRight.setPower((MotorSpeed2*LeftRight) + speedCorrection);
+            backLeft.setPower((MotorSpeed1*LeftRight) - speedCorrection);
+/*
+                frontRight.setVelocity(speed*max_velo);
+                frontLeft.setVelocity(-speed*max_velo);
+                backRight.setVelocity(-speed*max_velo);
+                backLeft.setVelocity(speed*max_velo);
+ */
+            currentPosition = (frontRight.getCurrentPosition() + backLeft.getCurrentPosition()) / 2;
+            currentHeading = getAngle();
+        }
+
+        hardStop();
+
+    }
+
+    private void Strafe_old(int distanceInInches, double speed, int LeftRight ){
+
+        int currentPosition = 0;
+        double currentHeading;
+        int wantedPosition = (int) ((distanceInInches / DistancePerTick) * fudge);
+        double targetHeading = getAngle();
+
+        resetEncoders();
+
+        while ((Math.abs(currentPosition) < wantedPosition) && opModeIsActive()){
+
+
+            currentHeading = targetHeading;
+
+            //Calculate how far off we are
+            double error = currentHeading - targetHeading;
+
+            //Using the error calculate some correction factor
+            double speedCorrection = error * 10;
+
+            //Adjust the left and right power to try and compensate for the error
+                /*
+                 leftSpeed = speed + speedCorrection;
+                 rightSpeed = speed - speedCorrection;
+                 */
+
+            double MotorSpeed1 = speed ;
+            double MotorSpeed2 = -speed ;
+
+            telemetry.addData("error",error);
+            telemetry.addData("motor1",MotorSpeed1);
+            telemetry.addData("motor2",MotorSpeed2);
+            telemetry.update();
+
+            frontRight.setPower((MotorSpeed1-speedCorrection)*LeftRight);
+            frontLeft.setPower((MotorSpeed2+speedCorrection)*LeftRight);
+            backRight.setPower((MotorSpeed2-speedCorrection)*LeftRight);
+            backLeft.setPower((MotorSpeed1+speedCorrection)*LeftRight);
+/*
+                frontRight.setVelocity(speed*max_velo);
+                frontLeft.setVelocity(-speed*max_velo);
+                backRight.setVelocity(-speed*max_velo);
+                backLeft.setVelocity(speed*max_velo);
+ */
+            currentPosition = (frontRight.getCurrentPosition() + backLeft.getCurrentPosition()) / 2;
+            currentHeading = getAngle();
+        }
+
+        hardStop();
+
+    }
         private void rotate(int degrees, double power)
         {
             double  leftPower, rightPower;
@@ -489,7 +683,7 @@ import java.util.ArrayList;
             return globalAngle;
         }
 
-        public void driveHeading(int distanceInInches, int targetHeading, double speed)
+        public void driveHeading(double distanceInInches, int targetHeading, double speed)
         {
             int error;
             double currentHeading;

@@ -331,43 +331,44 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
         sleep(100);
         driveHeading(-8, 0, 1);
         sleep(100);
+        /*
        rotatetoTargetHeading(-45,.5);
         sleep(100);
         rotatetoTargetHeading(-45,.2);
+         */
+        Strafe(8,.3,1);
         liftArmGoHigh();
-        sleep(1000);
-        driveHeading(5, -45, .2);
+        sleep(1500);
+        driveHeading(1.5, 0, .2);
         Arm_Motor.setTargetPosition(Arm_Motor.getCurrentPosition()-(int)(3*ArmotorTickPerInch));
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Arm_Motor.setVelocity(max_arm_velo);
-        while (Arm_Motor.isBusy())
-        {
-
-        }
         claw_drop();
         sleep(100);
         liftArmGoHigh();
-        driveHeading(-6.5, -45, .5);
+        sleep(1500);
+        driveHeading(-1.5, 0, .5);
         Arm_Motor.setTargetPosition(ConeStackStartingPos-(ConeCount*(int)(ArmotorTickPerInch*1.23)));
-        rotatetoTargetHeading(90,.4);
-        driveHeading(17.5,90 , .5);
+        rotatetoTargetHeading(90,.2);
+        driveHeading(26,90 , .5);
         claw_grab();
         sleep(250);
         Arm_Motor.setTargetPosition(ConeStackStartingPos+((1+ConeCount)*(int)(ArmotorTickPerInch*3.65)));
-        driveHeading(-17.5,90 , .6);
-        liftArmGoHigh();
-        rotatetoTargetHeading(-45,.5);
+        driveHeading(-20,90 , .5);
+        rotatetoTargetHeading(0,.5);
         sleep(100);
-        rotatetoTargetHeading(-45,.2);
-        driveHeading(5.5, -45, .3);
+        liftArmGoHigh();
+        Strafe(7.25,.3,1);
+        driveHeading(2,0 , .3);
+        sleep(500);
         Arm_Motor.setTargetPosition(Arm_Motor.getCurrentPosition()-(int)(3*ArmotorTickPerInch));
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Arm_Motor.setVelocity(max_arm_velo);
         claw_drop();
-        sleep(100);
-        driveHeading(-8, -45, .2);
+        sleep(500);
+        driveHeading(-2.5, 0, .2);
         liftArmGoGround();
-        rotatetoTargetHeading(0,.5);
+        rotatetoTargetHeading(0,.2);
         if (activeSlot == 2) {
 
         } else if (activeSlot == 3) {
@@ -476,11 +477,11 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
 
          private void AutogoRightSlot()
         {
-            Strafe(20,.5,1);
+            Strafe(10,.5,1);
         }
         private void AutogoLeftSlot() {
 
-            Strafe(20,.5,-1);
+            Strafe(30,.5,-1);
         }
         private void Test()
         {
@@ -597,11 +598,11 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
             hardStop();
 
         }
-    private void Strafe(int distanceInInches, double speed, int LeftRight ){
+    private void Strafe(double distanceInInches, double speed, int LeftRight ){
 
         int currentPosition = 0;
         double currentHeading;
-        int wantedPosition = (int) ((distanceInInches / DistancePerTick) * fudge);
+        double wantedPosition =  ((distanceInInches / DistancePerTick) * fudge);
         double targetHeading = getAngle();
 
         resetEncoders();
@@ -623,8 +624,8 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
                  rightSpeed = speed - speedCorrection;
                  */
 
-            double MotorSpeed1 = speed ;
-            double MotorSpeed2 = -speed ;
+            double MotorSpeed1 = speed  ;
+            double MotorSpeed2 = -speed  ;
 
             telemetry.addData("error",error);
             telemetry.addData("motor1",MotorSpeed1);
@@ -636,12 +637,7 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
             frontLeft.setPower((MotorSpeed2*LeftRight) - speedCorrection);
             backRight.setPower((MotorSpeed2*LeftRight) + speedCorrection);
             backLeft.setPower((MotorSpeed1*LeftRight) - speedCorrection);
-/*
-                frontRight.setVelocity(speed*max_velo);
-                frontLeft.setVelocity(-speed*max_velo);
-                backRight.setVelocity(-speed*max_velo);
-                backLeft.setVelocity(speed*max_velo);
- */
+
             currentPosition = (frontRight.getCurrentPosition() + backLeft.getCurrentPosition()) / 2;
             currentHeading = getAngle();
         }

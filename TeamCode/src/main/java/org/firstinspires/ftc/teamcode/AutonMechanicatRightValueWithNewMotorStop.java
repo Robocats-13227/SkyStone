@@ -288,8 +288,10 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         sleep(100);
         driveHeading(-7, 0, .7);
         sleep(100);
-        Strafe(4,.5,1);
-        SeekAndDestroy(1,.3,3,0);
+        Strafe(5,.5,1);
+
+        SeekAndDestroy(1,.175,3,0);
+        /*
         driveHeading(26.5,-90 , .5);
         claw_grab();
         sleep(600);
@@ -308,6 +310,8 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         } else {
             AutogoLeftSlot();
         }
+
+        */
 
 
 
@@ -392,7 +396,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
 
             Claw.setPosition(1);
             Claw_2.setPosition(0);
-            sleep(2000);
+            sleep(500);
             //liftArmGoGroundJunction();
             liftArmGoAuto();
             telemetry.addData("Mode", "running");
@@ -540,7 +544,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
             if (error == 0)
             {
                 ZeroCount ++;
-                ControlMotors(0,0,0,0,false);
+                ControlMotors(0,0,0,0,false,50);
                 sleep(50);
 
             }
@@ -555,12 +559,12 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
             leftSpeed = speedCorrection ;
             rightSpeed = -speedCorrection;
 
-            ControlMotors(leftSpeed,rightSpeed,leftSpeed,rightSpeed,false);
+            ControlMotors(leftSpeed,rightSpeed,leftSpeed,rightSpeed,false,50);
 
 
         }
         // ensure motors are off
-        ControlMotors(0,0,0,0,false);
+        ControlMotors(0,0,0,0,false,50);
 
 
     }
@@ -591,8 +595,8 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
             double speedCorrection = 0;// CalculateCorrectionPower(error,0);
 
 
-            double MotorSpeed1 = speed ;//(check+1)  ;
-            double MotorSpeed2 = -speed ;//(check+1)  ;
+            double MotorSpeed1 = speed ;
+            double MotorSpeed2 = -speed ;
 
             telemetry.addData("error",error);
             telemetry.addData("motor1",MotorSpeed1);
@@ -605,7 +609,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
                     ((MotorSpeed1*LeftRight) - speedCorrection ),
                     ((MotorSpeed1*LeftRight) +speedCorrection),
                     ((MotorSpeed2*LeftRight) -speedCorrection),
-                    false);
+                    false,150);
 
             DistanceFromPole = Pole_Senor.getDistance(DistanceUnit.INCH);
             /*
@@ -622,7 +626,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         telemetry.addLine("found pole");
         telemetry.update();
         hardStop();
-        /*
+
         Strafe(.1,.2,LeftRight*-1);
         sleep(100);
         double DistanceFromPole2 = Pole_Senor.getDistance(DistanceUnit.INCH);
@@ -709,7 +713,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
 
         hardStop();
 
-         */
+
     }
 
 
@@ -749,7 +753,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
             ((MotorSpeed1*LeftRight) + speedCorrection),
             ((MotorSpeed1*LeftRight) - speedCorrection),
             ((MotorSpeed2*LeftRight) + speedCorrection),
-             false);
+             false,50);
 
 
             currentPosition = (frontRight.getCurrentPosition() + backLeft.getCurrentPosition()) / 2;
@@ -802,7 +806,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
             rightSpeed= rightSpeed/2;
 
             //Apply the power settings to the motors
-            ControlMotors(leftSpeed,rightSpeed,leftSpeed,rightSpeed,false);
+            ControlMotors(leftSpeed,rightSpeed,leftSpeed,rightSpeed,false,50);
 
             //Measure all 4 wheel encoders and average to find approximate distance the center of the robot has moved
             distanceTraveled = (frontLeft.getCurrentPosition() + frontRight.getCurrentPosition() + backRight.getCurrentPosition() + backLeft.getCurrentPosition()) / driveBaseMotors;
@@ -820,7 +824,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         robotHeading = targetHeading;
     }
 
-    private void ControlMotors(double FrontLeft, double FrontRight, double BackLeft, double BackRight, boolean Velocity ) {
+    private void ControlMotors(double FrontLeft, double FrontRight, double BackLeft, double BackRight, boolean Velocity,int delay ) {
 
         double FRCurrPower = 0;
         double FLCurrPower = 0;
@@ -878,7 +882,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
 
 
             if ((FrontLeft == 0) || (BackRight == 0) || (BackLeft == 0) || (FrontRight == 0)) {
-                sleep(200);
+                sleep(delay);
                 frontRight.setPower(0);
                 frontLeft.setPower(0);
                 backRight.setPower(0);
@@ -982,7 +986,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         private void hardStop ()
         {
 
-        ControlMotors(0,0,0,0,false);
+        ControlMotors(0,0,0,0,false,50);
         }
 
         private void resetEncoders () {

@@ -281,7 +281,7 @@ public class AutonMechanicatRightValue extends LinearOpMode{
 
     }
 
-    public void runAuto1()
+    public void HighAuton()
     {
 
 
@@ -402,10 +402,10 @@ public class AutonMechanicatRightValue extends LinearOpMode{
             telemetry.addData("pole dist",Pole_Senor.getDistance(DistanceUnit.INCH) );
             telemetry.update();
 
-            // runAuto1();
-            // runAuto2();
+             HighAuton();
 
-        SeekAndDestroy2(1,.4,3,0);
+
+
     }
 
 

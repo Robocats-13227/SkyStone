@@ -92,7 +92,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
     //TODO get encoder value
     final public int MEDIUM_ARM_POS = 3147 ; // = 23 inches
 
-    final public int TOP_ARM_POS = 3800; // = 33 inches
+    final public int TOP_ARM_POS = 3924; // = 33 inches
 
     final public int AUTO_ARM_POS = 200;
 
@@ -279,29 +279,25 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         sleep(3000);    //time to let all functions finish
 
     }
-
-    public void runAuto1()
+    public void runAuto2High()
     {
-
-
         driveHeading(44, 0, 1);
         sleep(100);
-        driveHeading(-7, 0, .7);
-        sleep(100);
-        Strafe(5,.5,1);
-
-        SeekAndDestroy(1,.175,3,0);
-
-        driveHeading(26.5,-90 , .5);
+        driveHeading(-7.5, 0, 1);
+        sleep(50);
+        Strafe(5,.7,1);
+        SeekAndDestroy(1,.175,3,0,0);
+        driveHeading(26.5, -90, .5);
         claw_grab();
         sleep(600);
-        Arm_Motor.setTargetPosition(ConeStackStartingPos+((1+ConeCount)*(int)(ArmotorTickPerInch*4)));
+        Arm_Motor.setTargetPosition(ConeStackStartingPos + ((1 + ConeCount) * (int) (ArmotorTickPerInch * 4)));
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Arm_Motor.setVelocity(max_arm_velo);
-        while (Arm_Motor.isBusy()){}
-        driveHeading(-17,-90,1);
-        rotatetoTargetHeading(0,.3);
-        SeekAndDestroy(1,.2,3,0);
+        while (Arm_Motor.isBusy()) {
+        }
+        driveHeading(-17, -90, 1);
+        rotatetoTargetHeading(0, 1);
+        SeekAndDestroy(1, .2, 3, 0,0);
         sleep(100);
         if(activeSlot == 2) {
             AutogoMiddleSlot();
@@ -310,49 +306,40 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         } else {
             AutogoLeftSlot();
         }
+    }
 
+    public void runAuto3High()
+    {
+        driveHeading(44, 0, 1);
+        sleep(100);
+        driveHeading(-7.5, 0, .7);
+        sleep(100);
+        Strafe(5,.5,1);
 
-
-
-
-        /*
-        while(ConeCount <2)
-        {
-            Arm_Motor.setTargetPosition(ConeStackStartingPos-(ConeCount*(int)(ArmotorTickPerInch*1.23)));
-            Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            Arm_Motor.setVelocity(max_arm_velo);
-            claw_drop();
-            sleep(200);
-            driveHeading(42, -90, .3);
+        SeekAndDestroy(1,.175,3,0,0);
+        int x = 1;
+        while(x<3) {
+            driveHeading(26.5, -90, .5);
             claw_grab();
-            sleep(200);
-            Arm_Motor.setTargetPosition(ConeStackStartingPos+((1+ConeCount)*(int)(ArmotorTickPerInch*3.65)));
+            sleep(600);
+            Arm_Motor.setTargetPosition(ConeStackStartingPos + ((x) * (int) (ArmotorTickPerInch * 3)));
             Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             Arm_Motor.setVelocity(max_arm_velo);
-            driveHeading(-42, -90, .7);
-            sleep(200);
-            liftArmGoHigh();
-            sleep(200);
-            Strafe(10,.2,1);
-            claw_drop();
-            sleep(200);
-            Strafe(10,.7,-1);
-            ConeCount++;
-        }
-
-
-
-            if (activeSlot == 2) {
-                AutogoForwardSlot();
-            } else if (activeSlot == 3) {
-                AutogoRightSlot();
-            } else {
-                AutogoLeftSlot();
+            while (Arm_Motor.isBusy()) {
             }
-
-         */
-        sleep(3000);    //time to let all functions finish
-
+            driveHeading(-17, -90, 1);
+            rotatetoTargetHeading(0, 1);
+            SeekAndDestroy(1, .2, 3, 0,x);
+            x++;
+        }
+        sleep(100);
+        if(activeSlot == 2) {
+            AutogoMiddleSlot();
+        } else if (activeSlot == 3) {
+            AutogoRightSlot();
+        } else {
+            AutogoLeftSlot();
+        }
     }
 
 
@@ -372,17 +359,14 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
                 while(!isStarted())
                 {
 
-                    ScanTags();
-                    runtime.reset();
-                    telemetry.addData("slot1",Slot1);
+                ScanTags();
+                runtime.reset();
+                telemetry.addData("slot1",Slot1);
                 telemetry.addData("slot2",Slot2);
                 telemetry.addData("slot3",Slot3);
 
 
                 telemetry.update();
-
-
-
                 telemetry.addData("last seen",LastSeen);
             }
 
@@ -394,17 +378,17 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
 
             Claw.setPosition(1);
             Claw_2.setPosition(0);
-            sleep(800);
-            //liftArmGoGroundJunction();
+            sleep(700);
+
             liftArmGoAuto();
-            sleep(500);
             telemetry.addData("Mode", "running");
             telemetry.addData("Active Slot",activeSlot);
             telemetry.addData("pole dist",Pole_Senor.getDistance(DistanceUnit.INCH) );
             telemetry.update();
 
-             runAuto1();
+             //runAuto2High();
             // runAuto2();
+             runAuto3High();
 
 
     }
@@ -412,19 +396,19 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
 
          private void AutogoRightSlot()
         {
-            rotatetoTargetHeading(-90,.7);
+            rotatetoTargetHeading(-90,1);
             liftArmGoGround();
             driveHeading(25,-90,.5);
         }
         private void AutogoMiddleSlot()
         {
-            rotatetoTargetHeading(-90,.7);
+            rotatetoTargetHeading(-90,1);
             liftArmGoGround();
             driveHeading(8,-90,.5);
         }
         private void AutogoLeftSlot()
         {
-            rotatetoTargetHeading(-90,.7);
+            rotatetoTargetHeading(-90,1);
             liftArmGoGround();
             driveHeading(-8,-90,.5);
         }
@@ -571,7 +555,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
 
 
 
-    private void SeekAndDestroy(int LeftRight, double speed,int pole , double targetHeading)
+    private void SeekAndDestroy(int LeftRight, double speed,int pole , double targetHeading,int amount_of_cones)
     {
         int currentPosition = 0;
         double currentHeading;
@@ -626,7 +610,6 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         telemetry.update();
         hardStop();
 
-        Strafe(.1,.2,LeftRight*-1);
         sleep(100);
         double DistanceFromPole2 = Pole_Senor.getDistance(DistanceUnit.INCH);
         if (DistanceFromPole2 < 11)
@@ -652,7 +635,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
 
             DistanceFromPole = Pole_Senor.getDistance(DistanceUnit.INCH);
             liftArmGoHigh();
-            Distance_backwards = 5;
+            Distance_backwards = 5.5;
 
         }
         else
@@ -669,7 +652,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         }
 
 
-        driveHeading(DistanceFromPole-Distance_backwards,0,.3);
+        driveHeading(DistanceFromPole-Distance_backwards,(int)getAngle(),.3);
         sleep(100);
         Arm_Motor.setTargetPosition(Arm_Motor.getCurrentPosition()-(int)(3*ArmotorTickPerInch));
         Arm_Motor.setVelocity(max_arm_velo);
@@ -700,7 +683,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
             liftArmGoAuto();
         }
         driveHeading(-1,(int)getAngle(),.3);
-        Arm_Motor.setTargetPosition(ConeStackStartingPos-(ConeCount*(int)(ArmotorTickPerInch*1.93)));
+        Arm_Motor.setTargetPosition((int)(ConeStackStartingPos-((ArmotorTickPerInch*1.23))*amount_of_cones));
 
 
 

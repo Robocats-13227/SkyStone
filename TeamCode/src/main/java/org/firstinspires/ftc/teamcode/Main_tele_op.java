@@ -18,7 +18,7 @@ public class Main_tele_op extends LinearOpMode {
     private DcMotorEx motorBackLeft = null;
     private DcMotorEx motorBackRight = null;
     private DcMotorEx Arm_Motor = null;
-    private Servo Claw_servo = null;
+    private Servo Claw_1 = null;
     private Servo Claw_2 =null;
 
     public  double y ; // Remember, this is reversed!
@@ -52,7 +52,7 @@ public class Main_tele_op extends LinearOpMode {
     //TODO get encoder value
     final public int MEDIUM_ARM_POS = 3147 ; // = 23 inches
 
-    final public int TOP_ARM_POS = 4143; // = 33 inches
+    final public int TOP_ARM_POS = 4343; // = 33 inches
 
     final public double TRIGGER_DEADZONE = 0.1;
 
@@ -73,6 +73,14 @@ public class Main_tele_op extends LinearOpMode {
     {
 
         int current_pos = Arm_Motor.getCurrentPosition();
+        double arm_power;
+
+        if(gamepad2.y)
+        {
+              Arm_Motor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+              telemetry.addLine("button pressed");
+              telemetry.update();
+        }
 
 
         if (( Arm_Motor.getCurrentPosition() < TOP_ARM_POS-ArmMoveSpeed) && (gamepad2.right_trigger > TRIGGER_DEADZONE) )
@@ -82,7 +90,8 @@ public class Main_tele_op extends LinearOpMode {
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         }
-        else if((Arm_Motor.getCurrentPosition() > 0+ArmMoveSpeed) &&  (gamepad2.left_trigger > TRIGGER_DEADZONE))
+
+        else if(((Arm_Motor.getCurrentPosition() > 0+ArmMoveSpeed) || gamepad2.a) &&  (gamepad2.left_trigger > TRIGGER_DEADZONE))
         {
             Arm_Motor.setVelocity(arm_max_velo_trigger*(gamepad2.left_trigger));
             Arm_Motor.setTargetPosition(current_pos-ArmMoveSpeed);
@@ -115,6 +124,7 @@ public class Main_tele_op extends LinearOpMode {
                 Arm_Motor.setTargetPosition(TOP_ARM_POS);
                 Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             }
+
     }
 
     public void initialize()
@@ -123,7 +133,7 @@ public class Main_tele_op extends LinearOpMode {
         motorFrontRight = hardwareMap.get(DcMotorEx.class, "frontRight");
         motorBackLeft = hardwareMap.get(DcMotorEx.class, "BackLeft");
         motorBackRight = hardwareMap.get(DcMotorEx.class, "BackRight");
-        Claw_servo = hardwareMap.get(Servo.class,"Claw");
+        Claw_1 = hardwareMap.get(Servo.class,"Claw");
         Claw_2 = hardwareMap.get(Servo.class,"Claw2");
 
         //Claw_servo.setPosition(0);
@@ -166,7 +176,7 @@ public class Main_tele_op extends LinearOpMode {
 
     public void claw_drop()
     {
-        Claw_servo.setPosition(0);
+        Claw_1.setPosition(0);
         Claw_2.setPosition(1);
     }
 
@@ -179,7 +189,7 @@ public class Main_tele_op extends LinearOpMode {
 
     public void claw_grab()
     {
-        Claw_servo.setPosition(1);
+        Claw_1.setPosition(1);
         Claw_2.setPosition(0);
     }
 
@@ -214,10 +224,10 @@ public class Main_tele_op extends LinearOpMode {
         // This ensures all the powers maintain the same ratio, but only when
         // at least one is out of the range [-1, 1]
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-        double frontLeftPower = (y + x + rx) / denominator;
-        double backLeftPower = (y - x + rx) / denominator;
-        double frontRightPower = (y - x - rx) / denominator;
-        double backRightPower = (y + x - rx) / denominator;
+        double frontLeftPower = (y - x + rx) / denominator;
+        double backLeftPower = (y + x + rx) / denominator;
+        double frontRightPower = (y + x - rx) / denominator;
+        double backRightPower = (y - x - rx) / denominator;
         if(gamepad1.left_bumper && !LBPressedBefore)
         {
             if(Slow)
@@ -309,11 +319,11 @@ public class Main_tele_op extends LinearOpMode {
     public void process_claw()
     {
         if (gamepad2.x){
-            Claw_servo.setPosition(.4);
+            Claw_1.setPosition(0);
             Claw_2.setPosition(1);}
         else if (gamepad2.b){
-            Claw_servo.setPosition(1);
-            Claw_2.setPosition(0.4);
+            Claw_1.setPosition(1);
+            Claw_2.setPosition(0);
         }
     }
 

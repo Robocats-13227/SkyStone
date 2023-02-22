@@ -24,8 +24,8 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous (name = "AutonMechanicatRightValue",group = "Mechanicats")
-public class AutonMechanicatRightValue extends LinearOpMode{
+@Autonomous (name = "AutonMechanicatRightValueNewMotorStop",group = "Mechanicats")
+public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
     OpenCvCamera camera;
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
     //set motors
@@ -183,36 +183,35 @@ public class AutonMechanicatRightValue extends LinearOpMode{
                 if(tag.id == 1) //Tags are standard specified tag IDs. Robocats are using 0, 1 and 2
                 {
                     Slot1++;
+                    Slot2 = 0;
+                    Slot3 = 0;
 
                     break;
                 }
                 else if(tag.id == 2) //Tags are standard specified tag IDs. Robocats are using 0, 1 and 2
                 {
                     Slot2++;
+                    Slot3 = 0;
+                    Slot1 = 0;
                     break;
                 }
                 else if(tag.id == 3) //Tags are standard specified tag IDs. Robocats are using 0, 1 and 2
                 {
                     Slot3++;
+                    Slot2 = 0;
+                    Slot1 = 0;
                     break;
                 }
             }
+
 
         }
     }
 
     private void FindActiveSlot()
     {
-        while(opModeIsActive() && (runtime.seconds() < .5)) //Scan for max time of 4 seconds
-        {
-            ScanTags();
-            telemetry.addData("slot1",Slot1);
-            telemetry.addData("slot2",Slot2);
-            telemetry.addData("slot3",Slot3);
-            telemetry.update();
 
 
-        }
         //NOTE : This ordering should return slot2 if they ar all the same
         //or if there are 2 the same including slot 2
         //Slot 2 is the easiest to navigate to is we are unsure
@@ -360,20 +359,20 @@ public class AutonMechanicatRightValue extends LinearOpMode{
     @Override
         public void runOpMode() {
 
-            initialize();
+             initialize();
 
-            telemetry.addLine("everything done");
-            telemetry.addData("Mode", "waiting for start");
-            telemetry.update();
+                telemetry.addLine("everything done");
+                telemetry.addData("Mode", "waiting for start");
+                telemetry.update();
 
-            // **********************************************************************************************************
+                // **********************************************************************************************************
 
-            while(!isStarted())
-            {
+                while(!isStarted())
+                {
 
-                ScanTags();   //should wait 2 sec until runtime is 4 sec
-                runtime.reset();
-                telemetry.addData("slot1",Slot1);
+                    ScanTags();
+                    runtime.reset();
+                    telemetry.addData("slot1",Slot1);
                 telemetry.addData("slot2",Slot2);
                 telemetry.addData("slot3",Slot3);
 
@@ -384,10 +383,9 @@ public class AutonMechanicatRightValue extends LinearOpMode{
 
                 telemetry.addData("last seen",LastSeen);
             }
+
         //reset scanner
-                Slot1 = 0;
-                Slot2 = 0;
-                Slot3 = 0;
+
                 FindActiveSlot();
 
 
@@ -402,10 +400,10 @@ public class AutonMechanicatRightValue extends LinearOpMode{
             telemetry.addData("pole dist",Pole_Senor.getDistance(DistanceUnit.INCH) );
             telemetry.update();
 
-            // runAuto1();
+             runAuto1();
             // runAuto2();
 
-        SeekAndDestroy2(1,.4,3,0);
+
     }
 
 
@@ -568,144 +566,9 @@ public class AutonMechanicatRightValue extends LinearOpMode{
     }
 
 
+
+
     private void SeekAndDestroy(int LeftRight, double speed,int pole , double targetHeading)
-    {
-        int currentPosition = 0;
-        double currentHeading;
-        double Distance_backwards = 0;
-        int check = 0;
-
-
-        resetEncoders();
-        double DistanceFromPole = Pole_Senor.getDistance(DistanceUnit.INCH);
-
-        while ((DistanceFromPole > 10) &&(check < 200) && opModeIsActive()){
-
-
-            currentHeading = getAngle();
-
-            //Calculate how far off we are
-            double error = currentHeading - targetHeading;
-
-            //Using the error calculate some correction factor
-            double speedCorrection = CalculateCorrectionPower(error,0);
-
-
-            double MotorSpeed1 = speed/(check+1)  ;
-            double MotorSpeed2 = -speed/(check+1)  ;
-
-            telemetry.addData("error",error);
-            telemetry.addData("motor1",MotorSpeed1);
-            telemetry.addData("motor2",MotorSpeed2);
-            telemetry.addData("check",check);
-            telemetry.addLine("Speed correction");
-            telemetry.update();
-
-            ControlMotors(((MotorSpeed2*LeftRight)+speedCorrection ),
-                    ((MotorSpeed1*LeftRight) - speedCorrection ),
-                    ((MotorSpeed1*LeftRight) +speedCorrection),
-                    ((MotorSpeed2*LeftRight) -speedCorrection),
-                    false);
-
-            DistanceFromPole = Pole_Senor.getDistance(DistanceUnit.INCH);
-            if (DistanceFromPole < 11)
-            {
-                check++;
-            }
-            else
-            {
-                check = 0;
-            }
-        }
-        hardStop();
-        Strafe(.1,.2,LeftRight*-1);
-        sleep(100);
-        double DistanceFromPole2 = Pole_Senor.getDistance(DistanceUnit.INCH);
-        if (DistanceFromPole2 < 11)
-        {
-            DistanceFromPole = DistanceFromPole2;
-
-        }
-        if(pole ==1)
-        {
-
-            DistanceFromPole = Pole_Senor.getDistance(DistanceUnit.INCH);
-            liftArmGoLow();
-            Distance_backwards = 5.25;
-        }
-        else if(pole==2)
-        {
-            DistanceFromPole = Pole_Senor.getDistance(DistanceUnit.INCH);
-            liftArmGoMedium();
-            Distance_backwards = 5.25;
-        }
-        else if(pole == 3)
-        {
-
-            DistanceFromPole = Pole_Senor.getDistance(DistanceUnit.INCH);
-            liftArmGoHigh();
-            Distance_backwards = 5;
-
-        }
-        else
-        {
-            liftArmGoAuto();
-        }
-
-
-        telemetry.addData("Disance from pole",DistanceFromPole);
-        telemetry.update();
-        while (Arm_Motor.isBusy())
-        {
-
-        }
-
-
-        driveHeading(DistanceFromPole-Distance_backwards,0,.3);
-        sleep(100);
-        Arm_Motor.setTargetPosition(Arm_Motor.getCurrentPosition()-(int)(3*ArmotorTickPerInch));
-        Arm_Motor.setVelocity(max_arm_velo);
-        Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        while (Arm_Motor.isBusy())
-        {
-
-        }
-        claw_drop();
-        sleep(100);
-        if(pole ==1)
-        {
-            liftArmGoLow();
-
-        }
-        else if(pole==2)
-        {
-            liftArmGoMedium();
-
-        }
-        else if(pole == 3)
-        {
-            liftArmGoHigh();
-
-        }
-        else
-        {
-            liftArmGoAuto();
-        }
-        driveHeading(-1,(int)getAngle(),.3);
-        Arm_Motor.setTargetPosition(ConeStackStartingPos-(ConeCount*(int)(ArmotorTickPerInch*1.93)));
-
-
-
-
-
-
-
-
-
-        hardStop();
-    }
-
-    private void SeekAndDestroy2(int LeftRight, double speed,int pole , double targetHeading)
     {
         int currentPosition = 0;
         double currentHeading;
@@ -738,7 +601,7 @@ public class AutonMechanicatRightValue extends LinearOpMode{
             telemetry.addLine("Speed correction");
             telemetry.update();
 
-            ControlMotorsNew(((MotorSpeed2*LeftRight)+speedCorrection ),
+            ControlMotors(((MotorSpeed2*LeftRight)+speedCorrection ),
                     ((MotorSpeed1*LeftRight) - speedCorrection ),
                     ((MotorSpeed1*LeftRight) +speedCorrection),
                     ((MotorSpeed2*LeftRight) -speedCorrection),
@@ -956,24 +819,8 @@ public class AutonMechanicatRightValue extends LinearOpMode{
         //Update the direction we think we are pointing
         robotHeading = targetHeading;
     }
-    private void ControlMotors(double FrontLeft,double FrontRight,double BackLeft,double BackRight, boolean Velocity )
-    {
-        if (Velocity)
-        {
-            frontRight.setVelocity(FrontRight*max_velo);
-            frontLeft.setVelocity(FrontLeft*max_velo);
-            backRight.setVelocity(BackRight*max_velo);
-            backLeft.setVelocity(BackLeft*max_velo);
-        }
-        else
-        {
-            frontRight.setPower(FrontRight);
-            frontLeft.setPower(FrontLeft);
-            backRight.setPower(BackRight);
-            backLeft.setPower(BackLeft);
-        }
-    }
-    private void ControlMotorsNew(double FrontLeft,double FrontRight,double BackLeft,double BackRight, boolean Velocity ) {
+
+    private void ControlMotors(double FrontLeft, double FrontRight, double BackLeft, double BackRight, boolean Velocity ) {
 
         double FRCurrPower = 0;
         double FLCurrPower = 0;
@@ -1135,7 +982,7 @@ public class AutonMechanicatRightValue extends LinearOpMode{
         private void hardStop ()
         {
 
-        ControlMotorsNew(0,0,0,0,false);
+        ControlMotors(0,0,0,0,false);
         }
 
         private void resetEncoders () {

@@ -50,22 +50,22 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
 
     // UNITS ARE METERS
     double tagsize = 0.166;
-   private int Slot1 = 0;
-   private int Slot2 = 0;
-   private int Slot3 = 0;
-   private int activeSlot = 2;
+    private int Slot1 = 0;
+    private int Slot2 = 0;
+    private int Slot3 = 0;
+    private int activeSlot = 2;
 
 
-   private Servo Claw = null;
-   private Servo Claw_2 = null;
+    private Servo Claw = null;
+    private Servo Claw_2 = null;
 
-   private ElapsedTime runtime = new ElapsedTime();
+    private ElapsedTime runtime = new ElapsedTime();
 
-   //gyro IMU
-   BNO055IMU imu;
-   Orientation lastAngles = new Orientation();
-   double globalAngle= 0;
-   private int robotHeading = 0;
+    //gyro IMU
+    BNO055IMU imu;
+    Orientation lastAngles = new Orientation();
+    double globalAngle= 0;
+    private int robotHeading = 0;
     private double pi = Math.PI;
     private double ticksPerRev = 428;
     private double wheelDiameter = 3;
@@ -96,7 +96,7 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
 
     public int ConeCount = 0;
 
-        //Vision
+    //Vision
 
 
     public void initialize()
@@ -180,37 +180,37 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
 
     public void claw_drop()
     {
-        Claw.setPosition(.5);
-        Claw_2.setPosition(.7);
+        Claw.setPosition(0);
+        Claw_2.setPosition(1);
     }
 
     public void claw_grab()
     {
-        Claw.setPosition(.7);
-        Claw_2.setPosition(.2);
+        Claw.setPosition(1);
+        Claw_2.setPosition(0);
     }
 
-        private void InitVision()
+    private void InitVision()
+    {
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
+
+        camera.setPipeline(aprilTagDetectionPipeline);
+        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
-            int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-            camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-            aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
-
-            camera.setPipeline(aprilTagDetectionPipeline);
-            camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+            @Override
+            public void onOpened()
             {
-                @Override
-                public void onOpened()
-                {
-                    camera.startStreaming(800,448, OpenCvCameraRotation.UPRIGHT);
-                }
+                camera.startStreaming(800,448, OpenCvCameraRotation.UPRIGHT);
+            }
 
-                @Override
-                public void onError(int errorCode)
-                {
+            @Override
+            public void onError(int errorCode)
+            {
 
-                }
-            });
+            }
+        });
     }
 
     private void ScanTags()
@@ -336,10 +336,10 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
         sleep(100);
         rotatetoTargetHeading(-45,.2);
          */
-        Strafe(8,.3,1);
+        Strafe(9.5,.3,1);
         liftArmGoHigh();
         sleep(1500);
-        driveHeading(1.5, 0, .2);
+        driveHeading(2.25, 0, .2);
         Arm_Motor.setTargetPosition(Arm_Motor.getCurrentPosition()-(int)(3*ArmotorTickPerInch));
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Arm_Motor.setVelocity(max_arm_velo);
@@ -347,30 +347,37 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
         sleep(100);
         liftArmGoHigh();
         sleep(1500);
-        driveHeading(-1.5, 0, .5);
         Arm_Motor.setTargetPosition(ConeStackStartingPos-(ConeCount*(int)(ArmotorTickPerInch*1.23)));
+        Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        Arm_Motor.setVelocity(max_arm_velo);
+        driveHeading(-.75, 0, .5);
         rotatetoTargetHeading(90,.2);
-        driveHeading(26,90 , .5);
+        rotatetoTargetHeading(90,.2);
+        driveHeading(26.5,90 , .5);
         claw_grab();
         sleep(250);
         Arm_Motor.setTargetPosition(ConeStackStartingPos+((1+ConeCount)*(int)(ArmotorTickPerInch*3.65)));
-        driveHeading(-20,90 , .5);
+        Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        Arm_Motor.setVelocity(max_arm_velo);
+        sleep(100);
+        driveHeading(-28,90 , .5);
         rotatetoTargetHeading(0,.5);
         sleep(100);
+        rotatetoTargetHeading(0,.5);
         liftArmGoHigh();
-        Strafe(7.25,.3,1);
-        driveHeading(2,0 , .3);
-        sleep(500);
+        sleep(1000);
+        driveHeading(2,0 , .5);
         Arm_Motor.setTargetPosition(Arm_Motor.getCurrentPosition()-(int)(3*ArmotorTickPerInch));
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Arm_Motor.setVelocity(max_arm_velo);
+        sleep(200);
         claw_drop();
         sleep(500);
         driveHeading(-2.5, 0, .2);
         liftArmGoGround();
-        rotatetoTargetHeading(0,.2);
+        rotatetoTargetHeading(90,.2);
         if (activeSlot == 2) {
-
+        AutogoMiddleSlot();
         } else if (activeSlot == 3) {
             AutogoRightSlot();
         } else {
@@ -404,9 +411,6 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
             Strafe(10,.7,-1);
             ConeCount++;
         }
-
-
-
             if (activeSlot == 2) {
                 AutogoForwardSlot();
             } else if (activeSlot == 3) {
@@ -414,58 +418,57 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
             } else {
                 AutogoLeftSlot();
             }
-
          */
         sleep(3000);    //time to let all functions finish
 
     }
 
     @Override
-        public void runOpMode() {
+    public void runOpMode() {
 
-            initialize();
+        initialize();
 
-            telemetry.addLine("everything done");
-            telemetry.addData("Mode", "waiting for start");
+        telemetry.addLine("everything done");
+        telemetry.addData("Mode", "waiting for start");
+        telemetry.update();
+
+        // **********************************************************************************************************
+
+        while(!isStarted())
+        {
+
+            ScanTags();   //should wait 2 sec until runtime is 4 sec
+            runtime.reset();
+            telemetry.addData("slot1",Slot1);
+            telemetry.addData("slot2",Slot2);
+            telemetry.addData("slot3",Slot3);
+
+
             telemetry.update();
 
-            // **********************************************************************************************************
-
-            while(!isStarted())
-            {
-
-                ScanTags();   //should wait 2 sec until runtime is 4 sec
-                runtime.reset();
-                telemetry.addData("slot1",Slot1);
-                telemetry.addData("slot2",Slot2);
-                telemetry.addData("slot3",Slot3);
 
 
-                telemetry.update();
-
-
-
-                telemetry.addData("last seen",LastSeen);
-            }
+            telemetry.addData("last seen",LastSeen);
+        }
         //reset scanner
-                Slot1 = 0;
-                Slot2 = 0;
-                Slot3 = 0;
-                FindActiveSlot();
+        Slot1 = 0;
+        Slot2 = 0;
+        Slot3 = 0;
+        FindActiveSlot();
 
 
 
-            Claw.setPosition(1);
-            Claw_2.setPosition(0);
-            sleep(2000);
-            //liftArmGoGroundJunction();
-            liftArmGoAuto();
-            telemetry.addData("Mode", "running");
-            telemetry.addData("Active Slot",activeSlot);
-            telemetry.update();
+        Claw.setPosition(1);
+        Claw_2.setPosition(0);
+        sleep(2000);
+        //liftArmGoGroundJunction();
+        liftArmGoAuto();
+        telemetry.addData("Mode", "running");
+        telemetry.addData("Active Slot",activeSlot);
+        telemetry.update();
 
-            runAuto1();
-            //runAuto2();
+        runAuto1();
+        //runAuto2();
 
 
 
@@ -475,129 +478,65 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
     }
 
 
-         private void AutogoRightSlot()
-        {
-            Strafe(10,.5,1);
-        }
-        private void AutogoLeftSlot() {
+    private void AutogoRightSlot()
+    {
+        rotatetoTargetHeading(90,.7);
+        driveHeading(20,90,.5);
+    }
+    private void AutogoMiddleSlot()
+    {
+        rotatetoTargetHeading(90,.7);
+        driveHeading(8,90,.5);
+    }
+    private void AutogoLeftSlot()
+    {
+        rotatetoTargetHeading(90,.7);
+        driveHeading(-9,90,.5);
+    }
+    private void Test()
+    {
+        driveHeading(12,0,.5);
+    }
 
-            Strafe(30,.5,-1);
-        }
-        private void Test()
-        {
-            driveHeading(12,0,.5);
-        }
+    private double CalculateCorrectionPower(double error, int CorrectionMode ) {
 
-
-
-
-
-
-
-
-
-
-
-        private void Left(int distanceInInches, double speed){
-
-            int currentPosition = 0;
-            int wantedPosition = (int) ((distanceInInches / DistancePerTick)* fudge);
-            imu.getAngularOrientation();
-            resetEncoders();
-
-            while ((currentPosition < wantedPosition) && opModeIsActive()){
-
-
-                frontRight.setPower(-speed);
-                frontLeft.setPower(speed);
-                backRight.setPower(speed);
-                backLeft.setPower(-speed);
-        /*
-               frontRight.setVelocity(-speed*max_velo);
-                frontLeft.setVelocity(speed*max_velo);
-                backRight.setVelocity(speed*max_velo);
-                backLeft.setVelocity(-speed*max_velo);
-                currentPosition = (frontLeft.getCurrentPosition() + backRight.getCurrentPosition()) / 2;
-         */
-            }
-
-            hardStop();
-
-        }
-
-
-        private void SetToTargetHeading(int targetHeading)
+        if(CorrectionMode == 0)
         {
 
-            int error;
-            int speedCorrection;
-            int leftSpeed;
-            int rightSpeed;
-            double currentHeading = getAngle();
-
-            //Calculate how far off we are
-            error = (int)(currentHeading - targetHeading);
-
-            //Using the error calculate some correction factor
-            speedCorrection = error * 10;
-
-            //Adjust the left and right power to try and compensate for the error
-            leftSpeed  =  speedCorrection;
-            rightSpeed = -speedCorrection;
-
-            while (error>5 && error<-5 )
+            return error * .06;
+        }
+        else if(CorrectionMode == 1)
+        {
+            if(Math.abs(error) <2)
             {
-            backRight.setPower(rightSpeed);
-            frontRight.setPower(rightSpeed);
-            backLeft.setPower(leftSpeed);
-            frontLeft.setPower(leftSpeed);
+                return 0;
             }
-
-
-        }
-
-        private void Right(int distanceInInches, double speed ){
-
-            int currentPosition = 0;
-            int wantedPosition = (int) ((distanceInInches / DistancePerTick) * fudge);
-            double targetHeading = getAngle();
-
-            resetEncoders();
-
-
-            while ((currentPosition < wantedPosition) && opModeIsActive()){
-
-
-                double currentHeading = targetHeading;
-
-                //Calculate how far off we are
-                double error = currentHeading - targetHeading;
-
-                //Using the error calculate some correction factor
-                double speedCorrection = error * .01;
-
-                //Adjust the left and right power to try and compensate for the error
-                /*
-                 leftSpeed = speed + speedCorrection;
-                 rightSpeed = speed - speedCorrection;
-                 */
-
-                frontRight.setPower(speed - speedCorrection);
-                frontLeft.setPower(-speed + speedCorrection);
-                backRight.setPower(-speed + speedCorrection);
-                backLeft.setPower(speed - speedCorrection);
-/*
-                frontRight.setVelocity(speed*max_velo);
-                frontLeft.setVelocity(-speed*max_velo);
-                backRight.setVelocity(-speed*max_velo);
-                backLeft.setVelocity(speed*max_velo);
- */
-                currentPosition = (frontRight.getCurrentPosition() + backLeft.getCurrentPosition()) / 2;
+            else if(Math.abs(error) <10)
+            {
+                return error * .01;
             }
-
-            hardStop();
-
+            else
+            {
+                return error*.09;
+            }
         }
+        else if(CorrectionMode == 2)
+        {
+            if(Math.abs(error) <2)
+            {
+                return 0;
+            }
+            else if(Math.abs(error) <10)
+            {
+                return Math.signum(error)*.3;
+            }
+            else
+            {
+                return Math.signum(error)*.8;
+            }
+        }
+        else return 0;
+    }
     private void Strafe(double distanceInInches, double speed, int LeftRight ){
 
         int currentPosition = 0;
@@ -616,13 +555,8 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
             double error = currentHeading - targetHeading;
 
             //Using the error calculate some correction factor
-            double speedCorrection = -error * 0.02;
+            double speedCorrection = CalculateCorrectionPower(error,0);
 
-            //Adjust the left and right power to try and compensate for the error
-                /*
-                 leftSpeed = speed + speedCorrection;
-                 rightSpeed = speed - speedCorrection;
-                 */
 
             double MotorSpeed1 = speed  ;
             double MotorSpeed2 = -speed  ;
@@ -633,10 +567,12 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
             telemetry.addData("Speed correction",speedCorrection);
             telemetry.update();
 
-            frontRight.setPower((MotorSpeed1*LeftRight) + speedCorrection);
-            frontLeft.setPower((MotorSpeed2*LeftRight) - speedCorrection);
-            backRight.setPower((MotorSpeed2*LeftRight) + speedCorrection);
-            backLeft.setPower((MotorSpeed1*LeftRight) - speedCorrection);
+            ControlMotors(((MotorSpeed2*LeftRight) - speedCorrection),
+                    ((MotorSpeed1*LeftRight) + speedCorrection),
+                    ((MotorSpeed1*LeftRight) - speedCorrection),
+                    ((MotorSpeed2*LeftRight) + speedCorrection),
+                    false);
+
 
             currentPosition = (frontRight.getCurrentPosition() + backLeft.getCurrentPosition()) / 2;
             currentHeading = getAngle();
@@ -646,108 +582,67 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
 
     }
 
-    private void Strafe_old(int distanceInInches, double speed, int LeftRight ){
+    /*
+  private void SeekAndDestroy(int LeftRight, double speed)
+  {
+      int currentPosition = 0;
+      double currentHeading;
+      double targetHeading = getAngle();
 
-        int currentPosition = 0;
-        double currentHeading;
-        int wantedPosition = (int) ((distanceInInches / DistancePerTick) * fudge);
-        double targetHeading = getAngle();
+      resetEncoders();
 
-        resetEncoders();
-
-        while ((Math.abs(currentPosition) < wantedPosition) && opModeIsActive()){
+      while ((Pole_Senor.getDistance() > .02) && opModeIsActive()){
 
 
-            currentHeading = targetHeading;
+          currentHeading = getAngle();
 
-            //Calculate how far off we are
-            double error = currentHeading - targetHeading;
+          //Calculate how far off we are
+          double error = currentHeading - targetHeading;
 
-            //Using the error calculate some correction factor
-            double speedCorrection = error * 10;
+          //Using the error calculate some correction factor
+          double speedCorrection = CalculateCorrectionPower(error,2);
 
-            //Adjust the left and right power to try and compensate for the error
-                /*
-                 leftSpeed = speed + speedCorrection;
-                 rightSpeed = speed - speedCorrection;
-                 */
 
-            double MotorSpeed1 = speed ;
-            double MotorSpeed2 = -speed ;
+          double MotorSpeed1 = speed  ;
+          double MotorSpeed2 = -speed  ;
 
-            telemetry.addData("error",error);
-            telemetry.addData("motor1",MotorSpeed1);
-            telemetry.addData("motor2",MotorSpeed2);
-            telemetry.update();
+          telemetry.addData("error",error);
+          telemetry.addData("motor1",MotorSpeed1);
+          telemetry.addData("motor2",MotorSpeed2);
+          telemetry.addData("Speed correction",speedCorrection);
+          telemetry.update();
 
-            frontRight.setPower((MotorSpeed1-speedCorrection)*LeftRight);
-            frontLeft.setPower((MotorSpeed2+speedCorrection)*LeftRight);
-            backRight.setPower((MotorSpeed2-speedCorrection)*LeftRight);
-            backLeft.setPower((MotorSpeed1+speedCorrection)*LeftRight);
-/*
-                frontRight.setVelocity(speed*max_velo);
-                frontLeft.setVelocity(-speed*max_velo);
-                backRight.setVelocity(-speed*max_velo);
-                backLeft.setVelocity(speed*max_velo);
- */
-            currentPosition = (frontRight.getCurrentPosition() + backLeft.getCurrentPosition()) / 2;
-            currentHeading = getAngle();
-        }
+          ControlMotors(((MotorSpeed2*LeftRight) - speedCorrection),
+                  ((MotorSpeed1*LeftRight) + speedCorrection),
+                  ((MotorSpeed1*LeftRight) - speedCorrection),
+                  ((MotorSpeed2*LeftRight) + speedCorrection),
+                  false);
 
-        hardStop();
+          currentHeading = getAngle();
+      }
 
-    }
-        private void rotate(int degrees, double power)
+      hardStop();
+
+
+  }
+   */
+    private void ControlMotors(double FrontLeft,double FrontRight,double BackLeft,double BackRight, boolean Velocity )
+    {
+        if (Velocity)
         {
-            double  leftPower, rightPower;
-
-            // restart imu movement tracking.
-            resetAngle();
-
-            // getAngle() returns + when rotating counter clockwise (left) and - when rotating
-            // clockwise (right).
-
-            if (degrees < 0)
-            {   // turn right.
-                leftPower = power;
-                rightPower = -power;
-            }
-            else if (degrees > 0)
-            {   // turn left.
-                leftPower = -power;
-                rightPower = power;
-            }
-            else return;
-
-            // set power to rotate.
-            backLeft.setPower(leftPower);
-            frontLeft.setPower(leftPower);
-            frontRight.setPower(rightPower);
-            backRight.setPower(rightPower);
-
-            // rotate until turn is completed.
-            if (degrees < 0)
-            {
-                // On right turn we have to get off zero first.
-                while (opModeIsActive() && getAngle() == 0) {}
-
-                while (opModeIsActive() && getAngle() > degrees) {}
-            }
-            else    // left turn.
-                while (opModeIsActive() && getAngle() < degrees) {}
-
-            // turn the motors off.
-            backLeft.setPower(0);
-            frontLeft.setPower(0);
-            frontRight.setPower(0);
-            backRight.setPower(0);
-
-            // wait for rotation to stop.
-            sleep(1000);
-
-            // reset angle tracking on new heading.
-            resetAngle();
+            frontRight.setVelocity(FrontRight*max_velo);
+            frontLeft.setVelocity(FrontLeft*max_velo);
+            backRight.setVelocity(BackRight*max_velo);
+            backLeft.setVelocity(BackLeft*max_velo);
         }
+        else
+        {
+            frontRight.setPower(FrontRight);
+            frontLeft.setPower(FrontLeft);
+            backRight.setPower(BackRight);
+            backLeft.setPower(BackLeft);
+        }
+    }
     private void rotatetoTargetHeading(int degrees, double power)
     {
         int error;
@@ -766,17 +661,17 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
         error = (int)(currentHeading - degrees);
 
         while(Math.abs(error) > 2){
-        currentHeading = getAngle();
+            currentHeading = getAngle();
 
-        //Calculate how far off we are
-        error = (int)(currentHeading - degrees);
+            //Calculate how far off we are
+            error = (int)(currentHeading - degrees);
 
-        //Using the error calculate some correction factor
-        speedCorrection = Math.signum(error);
+            //Using the error calculate some correction factor
+            speedCorrection = Math.signum(error);
 
-        //Adjust the left and right power to try and compensate for the error
-        leftSpeed = speedCorrection * max_velo * power;
-        rightSpeed = -speedCorrection * max_velo * power;
+            //Adjust the left and right power to try and compensate for the error
+            leftSpeed = speedCorrection * max_velo * power;
+            rightSpeed = -speedCorrection * max_velo * power;
 
             backLeft.setVelocity(leftSpeed);
             frontLeft.setVelocity(leftSpeed);
@@ -794,93 +689,83 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
 
         // reset angle tracking on new heading.
     }
+    private void rotatetoTargetHeadingWithZeroCount(int degrees, double power)
+    {
+        int error;
+        double currentHeading;
+        double speedCorrection = 0;
+        double leftSpeed;
+        double rightSpeed;
+        int ZeroCount;
 
-        private double getAngle()
-        {
-            // We experimentally determined the Z axis is the axis we want to use for heading angle.
-            // We have to process the angle because the imu works in euler angles so the Z axis is
-            // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
-            // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
 
-            Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-            double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
 
-            if (deltaAngle < -180)
-                deltaAngle += 360;
-            else if (deltaAngle > 180)
-                deltaAngle -= 360;
+        // rotate until turn is completed.
+        //Find where we are currently pointing
+        currentHeading = getAngle();
 
-            globalAngle += deltaAngle;
+        //Calculate how far off we are
+        error = (int)(currentHeading - degrees);
 
-            lastAngles = angles;
+        ZeroCount = 0;
 
-            return globalAngle;
-        }
+        while((Math.abs(error) > 2) || (ZeroCount < 2)){
+            currentHeading = getAngle();
 
-        public void driveHeading(double distanceInInches, int targetHeading, double speed)
-        {
-            int error;
-            double currentHeading;
-            double speedCorrection = 0;
-            double leftSpeed;
-            double rightSpeed;
-            double gain = .06;
-            int distanceTraveled;
-            int wantedPosition = (int) ((distanceInInches / DistancePerTick)* fudge);
+            //Calculate how far off we are
+            error = (int)(currentHeading - degrees);
 
-            resetEncoders();
-
-            if (wantedPosition > 0)
+            if (error == 0)
             {
-                //Going forwards so make sure the speed is +ve
-                speed = Math.abs(speed);
+                ZeroCount ++;
+                ControlMotors(0,0,0,0,false);
+                sleep(50);
+
             }
             else
             {
-                //Going backwards so make sure the speed is -ve
-                speed = -Math.abs(speed);
+                ZeroCount = 0;
             }
 
 
-            do {
-                //Find where we are currently pointing
-                currentHeading = getAngle();
+            //Adjust the left and right power to try and compensate for the erro
+            speedCorrection = CalculateCorrectionPower(error,0);
+            leftSpeed = speedCorrection ;
+            rightSpeed = -speedCorrection;
 
-                //Calculate how far off we are
-                error = (int)(currentHeading - targetHeading);
-
-                //Using the error calculate some correction factor
-                speedCorrection = error * gain;
-
-                //Adjust the left and right power to try and compensate for the error
-                leftSpeed = speed + speedCorrection;
-                rightSpeed = speed - speedCorrection;
-
-                leftSpeed= leftSpeed/2;
-                rightSpeed= rightSpeed/2;
-
-                //Apply the power settings to the motors
-                frontLeft.setPower(leftSpeed);
-                backLeft.setPower(leftSpeed);
-                frontRight.setPower(rightSpeed);
-                backRight.setPower(rightSpeed);
-
-                //Measure all 4 wheel encoders and average to find approximate distance the center of the robot has moved
-                distanceTraveled = (frontLeft.getCurrentPosition() + frontRight.getCurrentPosition() + backRight.getCurrentPosition() + backLeft.getCurrentPosition()) / driveBaseMotors;
+            ControlMotors(leftSpeed,rightSpeed,leftSpeed,rightSpeed,false);
 
 
-            }while ((Math.abs(distanceTraveled) < Math.abs(wantedPosition)) && opModeIsActive());//Keep going until the magnitude of the distance we have traveled is greater than the magnitude of the distance we asked for
-
-            //Done so turn off the motors
-            frontLeft.setPower(0);
-            backLeft.setPower(0);
-            frontRight.setPower(0);
-            backRight.setPower(0);
-
-            //Update the direction we think we are pointing
-            robotHeading = targetHeading;
         }
-    public void driveTranslation(int distanceInInches, int targetHeading, double speed)
+        // ensure motors are off
+        ControlMotors(0,0,0,0,false);
+
+
+    }
+
+    private double getAngle()
+    {
+        // We experimentally determined the Z axis is the axis we want to use for heading angle.
+        // We have to process the angle because the imu works in euler angles so the Z axis is
+        // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
+        // 180 degrees. We detect this transition and track the total cumulative angle of rotation.
+
+        Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
+
+        if (deltaAngle < -180)
+            deltaAngle += 360;
+        else if (deltaAngle > 180)
+            deltaAngle -= 360;
+
+        globalAngle += deltaAngle;
+
+        lastAngles = angles;
+
+        return globalAngle;
+    }
+
+    public void driveHeading(double distanceInInches, int targetHeading, double speed)
     {
         int error;
         double currentHeading;
@@ -913,23 +798,17 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
             error = (int)(currentHeading - targetHeading);
 
             //Using the error calculate some correction factor
-            speedCorrection = error * gain;
+            speedCorrection = CalculateCorrectionPower(error,0);
 
             //Adjust the left and right power to try and compensate for the error
             leftSpeed = speed + speedCorrection;
             rightSpeed = speed - speedCorrection;
 
-
-            //Adjust the left and right power to try and compensate for the error
-
             leftSpeed= leftSpeed/2;
             rightSpeed= rightSpeed/2;
 
             //Apply the power settings to the motors
-            frontLeft.setPower(leftSpeed);
-            backLeft.setPower(leftSpeed);
-            frontRight.setPower(rightSpeed);
-            backRight.setPower(rightSpeed);
+            ControlMotors(leftSpeed,rightSpeed,leftSpeed,rightSpeed,false);
 
             //Measure all 4 wheel encoders and average to find approximate distance the center of the robot has moved
             distanceTraveled = (frontLeft.getCurrentPosition() + frontRight.getCurrentPosition() + backRight.getCurrentPosition() + backLeft.getCurrentPosition()) / driveBaseMotors;
@@ -954,40 +833,43 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
 
 
 
-        private void resetAngle()
-        {
-            lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-
-            globalAngle = 0;
-        }
 
 
-        public float GetAngle()
-        {
-            lastAngles = imu.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
-            return lastAngles.firstAngle;
-        }
 
-        private void hardStop(){
 
-            frontLeft.setPower(0);
-            backLeft.setPower(0);
-            frontRight.setPower(0);
-            backRight.setPower(0);
+    private void resetAngle()
+    {
+        lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
-        }
+        globalAngle = 0;
+    }
 
-        private void resetEncoders() {
-            backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-            backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        }
+    public float GetAngle()
+    {
+        lastAngles = imu.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        return lastAngles.firstAngle;
+    }
+
+    private void hardStop(){
+
+        frontLeft.setPower(0);
+        backLeft.setPower(0);
+        frontRight.setPower(0);
+        backRight.setPower(0);
 
     }
 
+    private void resetEncoders() {
+        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+}

@@ -1,6 +1,4 @@
 package org.firstinspires.ftc.teamcode;
-
-
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -22,9 +20,9 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 
 import java.util.ArrayList;
 
-@Autonomous (name = "AutonMechanicatRight",group = "Mechanicats")
+@Autonomous (name = "AutonMechanicatRightSimple",group = "Mechanicats")
 
-public class AutonMechanicatRight extends LinearOpMode{
+public class AutonMechanicatRightSimple extends LinearOpMode {
     OpenCvCamera camera;
     AprilTagDetectionPipeline aprilTagDetectionPipeline;
     //set motors
@@ -80,8 +78,7 @@ public class AutonMechanicatRight extends LinearOpMode{
 
 
     final public int max_velo = 1000;
-    final public int max_arm_velo = 4000;
-    final public double ArmotorTickPerInch = 148.1;
+    final public int max_arm_velo =4000;
 
     final public int BOTTOM_ARM_POS = 500;
     //TODO get encoder value
@@ -90,9 +87,9 @@ public class AutonMechanicatRight extends LinearOpMode{
     //TODO get encoder value
     final public int MEDIUM_ARM_POS = 3147 ; // = 23 inches
 
-    final public int TOP_ARM_POS = 4343; // = 33 inches
+    final public int TOP_ARM_POS = 4043; // = 33 inches
 
-    final public int AUTO_ARM_POS = 500;
+    final public int AUTO_ARM_POS = 200;
 
     //Vision
 
@@ -124,8 +121,6 @@ public class AutonMechanicatRight extends LinearOpMode{
         backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         Arm_Motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-
 
 
 
@@ -177,7 +172,6 @@ public class AutonMechanicatRight extends LinearOpMode{
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Arm_Motor.setVelocity(max_arm_velo);
     }
-
     public void claw_drop()
     {
         Claw.setPosition(0);
@@ -189,7 +183,6 @@ public class AutonMechanicatRight extends LinearOpMode{
         Claw.setPosition(1);
         Claw_2.setPosition(0);
     }
-
     private void InitVision()
     {
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -245,7 +238,7 @@ public class AutonMechanicatRight extends LinearOpMode{
 
     private void FindActiveSlot()
     {
-        while(opModeIsActive() && (runtime.seconds() < .5))//Scan for max time of 4 seconds
+        while(opModeIsActive() && (runtime.seconds() < 4)) //Scan for max time of 4 seconds
         {
             ScanTags();
             telemetry.addData("slot1",Slot1);
@@ -283,47 +276,38 @@ public class AutonMechanicatRight extends LinearOpMode{
 
     public void runAuto1()
     {
-        sleep(3500);
+
+
         driveHeading(2, 0, .5);
-        sleep(200);
-        Strafe(15,.5,1);
-        sleep(200);
-        rotatetoTargetHeading(84,.5);
-        sleep(200);
-        Strafe(28.75, .25, -1);
-        liftArmGoHigh();
         sleep(1000);
-        driveHeading(1.5,90,.5);
+        Strafe(9.5, .15, 1);
         sleep(500);
-        Arm_Motor.setTargetPosition(Arm_Motor.getCurrentPosition()-(int)(ArmotorTickPerInch*6));
+        liftArmGoLow();
+        driveHeading(2, 0, .1);
+        Arm_Motor.setTargetPosition(1400);
         Arm_Motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        Arm_Motor.setVelocity(max_arm_velo);
-        sleep(200);
+        Arm_Motor.setVelocity(2000);
+        sleep(1000);
         claw_drop();
-        sleep(200);
-        liftArmGoHigh();
-        sleep(200);
-        driveHeading(-2, 90, .5);
+        sleep(500);
+        driveHeading(-2, 0, .5);
+        claw_grab();
         liftArmGoAuto();
-        Strafe(9.5,.2,1);
-        sleep(200);
-        rotatetoTargetHeading(-90,.5);
-        sleep(200);
-        liftArmGoGround();
 
         if (activeSlot == 2) {
-            AutogoForwardSlot(15);
+            AutogoForwardSlot(10);
         } else if (activeSlot == 3) {
-            AutogoRightSlot( 32);
+            AutogoRightSlot( 30);
         } else {
-            AutoGoLeftSlot(3);
+            AutogoLeftSlot(9);
         }
 
 
 
+        liftArmGoGround();
+
         claw_drop();
-
-
+        sleep(3000);    //time to let all functions finish
 
     }
 
@@ -382,22 +366,30 @@ public class AutonMechanicatRight extends LinearOpMode{
     }
     private void AutogoForwardSlot(int Distance)
     {
-
-        driveHeading(Distance,-90,.5);
+        sleep(1000);
+        Strafe(Distance, .5, -1);
+        driveHeading(20,0,.5);
 
     }
 
     private void AutogoRightSlot(int Distance)
     {
+        sleep(1000);
+        int loop = 0;
+        int ChangeDirection = 1;
+        Strafe(Distance,.3,-1);
+        driveHeading(20,0,.5);
 
-        driveHeading(Distance,-90,.5);
+
 
     }
-    private void AutoGoLeftSlot(int Distance)
-    {
-        driveHeading(-Distance , -90,.5);
+    private void AutogoLeftSlot(int Distance) {
+        sleep(1000);
+        int loop = 0;
+        int ChangeDirection = 1;
+        Strafe(Distance,.5,1);
+        driveHeading(20,0,.5);
     }
-
     private void Test()
     {
         driveHeading(12,0,.5);
@@ -691,52 +683,6 @@ public class AutonMechanicatRight extends LinearOpMode{
 
         return globalAngle;
     }
-    private void rotatetoTargetHeading(int degrees, double power)
-    {
-        int error;
-        double currentHeading;
-        double speedCorrection = 0;
-        double leftSpeed;
-        double rightSpeed;
-
-
-
-        // rotate until turn is completed.
-        //Find where we are currently pointing
-        currentHeading = getAngle();
-
-        //Calculate how far off we are
-        error = (int)(currentHeading - degrees);
-
-        while(Math.abs(error) > 2){
-            currentHeading = getAngle();
-
-            //Calculate how far off we are
-            error = (int)(currentHeading - degrees);
-
-            //Using the error calculate some correction factor
-            speedCorrection = Math.signum(error);
-
-            //Adjust the left and right power to try and compensate for the error
-            leftSpeed = speedCorrection * max_velo * power;
-            rightSpeed = -speedCorrection * max_velo * power;
-
-            backLeft.setVelocity(leftSpeed);
-            frontLeft.setVelocity(leftSpeed);
-            frontRight.setVelocity(rightSpeed);
-            backRight.setVelocity(rightSpeed);
-
-        }
-        // turn the motors off.
-        backLeft.setPower(0);
-        frontLeft.setPower(0);
-        frontRight.setPower(0);
-        backRight.setPower(0);
-
-        // wait for rotation to stop.
-
-        // reset angle tracking on new heading.
-    }
 
     public void driveHeading(double distanceInInches, int targetHeading, double speed)
     {
@@ -911,3 +857,4 @@ public class AutonMechanicatRight extends LinearOpMode{
     }
 
 }
+

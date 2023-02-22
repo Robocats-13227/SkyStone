@@ -291,7 +291,7 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         Strafe(5,.5,1);
 
         SeekAndDestroy(1,.175,3,0);
-        /*
+
         driveHeading(26.5,-90 , .5);
         claw_grab();
         sleep(600);
@@ -310,8 +310,6 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
         } else {
             AutogoLeftSlot();
         }
-
-        */
 
 
 
@@ -396,9 +394,10 @@ public class AutonMechanicatRightValueWithNewMotorStop extends LinearOpMode{
 
             Claw.setPosition(1);
             Claw_2.setPosition(0);
-            sleep(500);
+            sleep(800);
             //liftArmGoGroundJunction();
             liftArmGoAuto();
+            sleep(500);
             telemetry.addData("Mode", "running");
             telemetry.addData("Active Slot",activeSlot);
             telemetry.addData("pole dist",Pole_Senor.getDistance(DistanceUnit.INCH) );

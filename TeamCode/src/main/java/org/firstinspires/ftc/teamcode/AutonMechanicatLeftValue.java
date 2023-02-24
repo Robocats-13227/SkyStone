@@ -480,7 +480,7 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
         liftArmGoGround();
         rotatetoTargetHeading(90,.2);
         if (activeSlot == 2) {
-        AutogoMiddleSlot();
+            AutogoMiddleSlot();
         } else if (activeSlot == 3) {
             AutogoRightSlot();
         } else {
@@ -1107,10 +1107,7 @@ public class AutonMechanicatLeftValue extends LinearOpMode{
 
     private void hardStop(){
 
-        frontLeft.setPower(0);
-        backLeft.setPower(0);
-        frontRight.setPower(0);
-        backRight.setPower(0);
+        ControlMotors(0,0,0,0,false,100);
 
     }
 

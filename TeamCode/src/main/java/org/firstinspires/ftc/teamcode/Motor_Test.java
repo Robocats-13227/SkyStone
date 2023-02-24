@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @TeleOp (name = "motor_test" ,group = "Mechanicats")
-@Disabled
+
 public class Motor_Test extends LinearOpMode {
 
     private DcMotorEx motorFrontLeft = null;
